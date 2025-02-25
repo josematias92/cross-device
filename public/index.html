@@ -202,7 +202,7 @@
 
             try {
                 // Step 1: Request authentication options from the server
-                const response = await fetch('http://localhost:3000/auth/start-authentication', {
+                const response = await fetch('/auth/start-authentication', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
