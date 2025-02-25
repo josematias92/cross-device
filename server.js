@@ -180,11 +180,9 @@ app.post('/auth/verify-authentication', async (req, res) => {
 });
 
 app.get('/auth/biometric-prompt', async (req, res) => {
-    // Generate a random email for this session
     const randomId = Math.random().toString(36).substring(2, 10);
     const email = `passkey-${randomId}@example.com`;
 
-    // Create user if doesn't exist
     let user = users.get(email);
     if (!user) {
         user = {
@@ -195,10 +193,8 @@ app.get('/auth/biometric-prompt', async (req, res) => {
         users.set(email, user);
     }
 
-    // Store email in session
     req.session.email = email;
 
-    // Serve HTML page
     res.send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -207,29 +203,9 @@ app.get('/auth/biometric-prompt', async (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Biometric THD Service</title>
             <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                    margin: 0;
-                    background-color: #f0f0f0;
-                }
-                .container {
-                    text-align: center;
-                    padding: 20px;
-                    background: white;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-                button {
-                    padding: 10px 20px;
-                    margin: 10px;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
+                body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
+                .container { text-align: center; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                button { padding: 10px 20px; margin: 10px; border: none; border-radius: 4px; cursor: pointer; }
                 #yesBtn { background-color: #4CAF50; color: white; }
                 #noBtn { background-color: #f44336; color: white; }
             </style>
@@ -243,43 +219,74 @@ app.get('/auth/biometric-prompt', async (req, res) => {
             </div>
 
             <script>
+                function base64ToArrayBuffer(base64) {
+                    const standardBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+                    const paddedBase64 = standardBase64.padEnd(standardBase64.length + (4 - standardBase64.length % 4) % 4, '=');
+                    const binaryString = window.atob(paddedBase64);
+                    const len = binaryString.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    return bytes.buffer;
+                }
+
+                function arrayBufferToBase64(buffer) {
+                    const bytes = new Uint8Array(buffer);
+                    let binary = '';
+                    for (let i = 0; i < bytes.byteLength; i++) {
+                        binary += String.fromCharCode(bytes[i]);
+                    }
+                    return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                }
+
+                const email = '${email}';  // Injected by backend
+
                 document.getElementById('yesBtn').addEventListener('click', async () => {
                     try {
-                        // Fetch registration options
                         const response = await fetch('/auth/start-registration', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: '${email}' })
+                            body: JSON.stringify({ email })
                         });
                         
                         const options = await response.json();
-                        if (!response.ok) throw new Error(options.error);
+                        if (!response.ok) throw new Error(options.error || 'Failed to fetch registration options');
 
-                        // Start WebAuthn registration
+                        options.challenge = base64ToArrayBuffer(options.challenge);
+                        options.user.id = base64ToArrayBuffer(options.user.id);
+                        if (options.excludeCredentials && Array.isArray(options.excludeCredentials)) {
+                            options.excludeCredentials = options.excludeCredentials.map(cred => ({
+                                ...cred,
+                                id: base64ToArrayBuffer(cred.id)
+                            }));
+                        } else {
+                            options.excludeCredentials = [];
+                        }
+
                         const credential = await navigator.credentials.create({ publicKey: options });
-                        
-                        // Send verification
+
+                        const regResponse = {
+                            id: credential.id,
+                            rawId: arrayBufferToBase64(credential.rawId),
+                            response: {
+                                clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                                attestationObject: arrayBufferToBase64(credential.response.attestationObject)
+                            },
+                            type: credential.type
+                        };
+
                         const verifyResponse = await fetch('/auth/verify-registration', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                email: '${email}',
-                                id: credential.id,
-                                rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
-                                response: {
-                                    clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
-                                    attestationObject: btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)))
-                                },
-                                type: credential.type
-                            })
+                            body: JSON.stringify({ ...regResponse, email })
                         });
 
                         const result = await verifyResponse.json();
                         if (result.success) {
                             alert('Passkey registration successful!');
-                            // Redirect or update UI as needed
                         } else {
-                            alert('Registration failed: ' + result.error);
+                            throw new Error(result.error || 'Verification failed');
                         }
                     } catch (error) {
                         alert('Error during registration: ' + error.message);
@@ -288,8 +295,6 @@ app.get('/auth/biometric-prompt', async (req, res) => {
 
                 document.getElementById('noBtn').addEventListener('click', () => {
                     alert('Registration cancelled.');
-                    // Optionally redirect or close window
-                    // window.location.href = '/';
                 });
             </script>
         </body>
