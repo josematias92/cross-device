@@ -218,7 +218,7 @@
                 const authResponse = await startAuthenticationv2(options);
 
                 // Step 3: Send the authentication response to the server for verification
-                const verifyResponse = await fetch('http://localhost:3000/auth/verify-authentication', {
+                const verifyResponse = await fetch('/auth/verify-authentication', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
