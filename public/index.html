@@ -189,7 +189,7 @@
         // --- Authentication ---
           const { startAuthentication } = SimpleWebAuthnBrowser;
 
-            async function startAuthentication() {
+            async function startAuthenticationv2() {
             const emailInput = document.getElementById('email');
             const messageElement = document.getElementById('message');
             const email = emailInput.value.trim();
@@ -215,7 +215,7 @@
                 }
 
                 // Step 2: Use WebAuthn to get the authentication response
-                const authResponse = await startAuthentication(options);
+                const authResponse = await startAuthenticationv2(options);
 
                 // Step 3: Send the authentication response to the server for verification
                 const verifyResponse = await fetch('http://localhost:3000/auth/verify-authentication', {
@@ -246,7 +246,7 @@
 
         // --- Event Listeners and Initialization ---
         document.getElementById('registerButton').addEventListener('click', startRegistration);
-        document.getElementById('authButton').addEventListener('click', startAuthentication);
+        document.getElementById('authButton').addEventListener('click', startAuthenticationv2);
         window.addEventListener('load', generateBiometricQRCode);
     </script>
 </body>
