@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passkey Registration & Authentication</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse { animation: pulse 1.5s infinite; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .bg-gradient { background: linear-gradient(135deg, #6b7280, #1f2937); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+    <div class="bg-gradient p-8 rounded-xl shadow-2xl max-w-md w-full">
+        <h1 class="text-3xl font-bold text-center mb-6 text-indigo-300">Passkey Manager</h1>
+        
+        <!-- Status Message -->
+        <div id="status" class="text-center mb-6 p-4 rounded-lg bg-gray-800 fade-in hidden"></div>
+
+        <!-- Instructions -->
+        <div class="mb-4 text-center">
+            <p class="text-gray-300">Passkey registration will start automatically in 3 seconds...</p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="space-y-4">
+            <button id="authButton" class="w-full py-3 px-6 bg-teal-600 hover:bg-teal-700 rounded-lg text-lg font-semibold transition-all duration-300 pulse">
+                Authenticate
+            </button>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="spinner" class="mt-6 flex justify-center hidden">
+            <svg class="animate-spin h-8 w-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        // --- Utility Functions ---
+        function base64ToArrayBuffer(base64) {
+            const standardBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+            const paddedBase64 = standardBase64.padEnd(standardBase64.length + (4 - standardBase64.length % 4) % 4, '=');
+            const binaryString = window.atob(paddedBase64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        // --- UI Helpers ---
+        const statusDiv = document.getElementById('status');
+        const spinner = document.getElementById('spinner');
+
+        function showStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden', 'bg-green-600', 'bg-red-600');
+            statusDiv.classList.add(isError ? 'bg-red-600' : 'bg-green-600', 'fade-in');
+            setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+        }
+
+        function toggleSpinner(show) {
+            spinner.classList.toggle('hidden', !show);
+        }
+
+        function generateRandomEmail() {
+            const randomId = Math.random().toString(36).substring(2, 10);
+            return `passkey-${randomId}@example.com`;
+        }
+
+        // --- Registration ---
+        async function startRegistration() {
+            try {
+                const email = generateRandomEmail();
+                toggleSpinner(true);
+                showStatus(`Registering passkey for ${email}...`);
+
+                // Step 1: Fetch registration options
+                const regResponse = await fetch('/auth/start-registration', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email })
+                });
+
+                if (!regResponse.ok) {
+                    const errorData = await regResponse.json();
+                    throw new Error(errorData.error || 'Failed to fetch registration options');
+                }
+
+                const regOptions = await regResponse.json();
+                regOptions.challenge = base64ToArrayBuffer(regOptions.challenge);
+                regOptions.user.id = base64ToArrayBuffer(regOptions.user.id);
+                if (regOptions.excludeCredentials && Array.isArray(regOptions.excludeCredentials)) {
+                    regOptions.excludeCredentials = regOptions.excludeCredentials.map(cred => ({
+                        ...cred,
+                        id: base64ToArrayBuffer(cred.id)
+                    }));
+                }
+
+                // Step 2: Create credential
+                const credential = await navigator.credentials.create({ publicKey: regOptions });
+
+                // Step 3: Verify registration
+                const regData = {
+                    email,
+                    id: credential.id,
+                    rawId: arrayBufferToBase64(credential.rawId),
+                    response: {
+                        clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                        attestationObject: arrayBufferToBase64(credential.response.attestationObject)
+                    },
+                    type: credential.type
+                };
+
+                const verifyResponse = await fetch('/auth/verify-registration', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(regData)
+                });
+
+                const result = await verifyResponse.json();
+                toggleSpinner(false);
+
+                if (result.success) {
+                    showStatus('Passkey registered successfully!');
+                    localStorage.setItem('lastRegisteredEmail', email); // Store for authentication
+                } else {
+                    throw new Error(result.error || 'Verification failed');
+                }
+            } catch (error) {
+                toggleSpinner(false);
+                showStatus('Error during registration: ' + error.message, true);
+                console.error(error);
+            }
+        }
+
+        // --- Authentication ---
+        async function startAuthentication() {
+            try {
+                const email = localStorage.getItem('lastRegisteredEmail');
+                if (!email) throw new Error('No registered email found. Please register first.');
+                
+                toggleSpinner(true);
+                showStatus(`Authenticating with ${email}...`);
+
+                // Step 1: Fetch authentication options
+                const authResponse = await fetch('/auth/start-authentication', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email })
+                });
+
+                if (!authResponse.ok) {
+                    const errorData = await authResponse.json();
+                    throw new Error(errorData.error || 'Failed to fetch authentication options');
+                }
+
+                const authOptions = await authResponse.json();
+                authOptions.challenge = base64ToArrayBuffer(authOptions.challenge);
+                if (authOptions.allowCredentials && Array.isArray(authOptions.allowCredentials)) {
+                    authOptions.allowCredentials = authOptions.allowCredentials.map(cred => ({
+                        ...cred,
+                        id: base64ToArrayBuffer(cred.id)
+                    }));
+                }
+
+                // Step 2: Get credential
+                const credential = await navigator.credentials.get({ publicKey: authOptions });
+
+                // Step 3: Verify authentication (assumed endpoint)
+                const authData = {
+                    email,
+                    id: credential.id,
+                    rawId: arrayBufferToBase64(credential.rawId),
+                    response: {
+                        clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                        authenticatorData: arrayBufferToBase64(credential.response.authenticatorData),
+                        signature: arrayBufferToBase64(credential.response.signature),
+                        userHandle: credential.response.userHandle ? arrayBufferToBase64(credential.response.userHandle) : null
+                    },
+                    type: credential.type
+                };
+
+                const verifyResponse = await fetch('/auth/verify-authentication', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(authData)
+                });
+
+                const result = await verifyResponse.json();
+                toggleSpinner(false);
+
+                if (result.success) {
+                    showStatus('Authentication successful!');
+                } else {
+                    throw new Error(result.error || 'Authentication failed');
+                }
+            } catch (error) {
+                toggleSpinner(false);
+                showStatus('Error during authentication: ' + error.message, true);
+                console.error(error);
+            }
+        }
+
+        // --- Event Listeners and Auto-Trigger ---
+        document.getElementById('authButton').addEventListener('click', startAuthentication);
+
+        // Trigger registration after 3 seconds
+        window.addEventListener('load', () => {
+            setTimeout(startRegistration, 3000);
+        });
+    </script>
+</body>
+</html>
