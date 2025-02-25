@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Passkey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .bg-gradient { background: linear-gradient(135deg, #6b7280, #1f2937); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+    <div class="bg-gradient p-8 rounded-xl shadow-2xl max-w-md w-full text-center">
+        <h1 class="text-3xl font-bold mb-6 text-indigo-300">Register Passkey</h1>
+        <p id="message" class="text-lg font-medium text-gray-300">You are about to generate a passkey</p>
+        <p id="countdown" class="text-sm text-gray-400 mt-2">Starting in <span id="timer">3</span> seconds...</p>
+        <div id="status" class="text-center mt-6 p-4 rounded-lg bg-gray-800 fade-in hidden"></div>
+    </div>
+
+    <script>
+        // Utility Functions
+        function base64UrlToBase64(base64url) {
+            return base64url.replace(/-/g, '+').replace(/_/g, '/');
+        }
+
+        function base64ToArrayBuffer(base64) {
+            try {
+                const standardBase64 = base64UrlToBase64(base64);
+                const paddedBase64 = standardBase64.padEnd(standardBase64.length + (4 - standardBase64.length % 4) % 4, '=');
+                const binaryString = window.atob(paddedBase64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return bytes.buffer;
+            } catch (error) {
+                console.error('Base64 decoding error:', error, 'Input:', base64);
+                throw new Error('Invalid base64 string received from server');
+            }
+        }
+
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = window.btoa(binary);
+            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        // UI Helpers
+        const statusDiv = document.getElementById('status');
+        const timerSpan = document.getElementById('timer');
+
+        function showStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.classList.remove('hidden', 'bg-green-600', 'bg-red-600');
+            statusDiv.classList.add(isError ? 'bg-red-600' : 'bg-green-600', 'fade-in');
+            setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+        }
+
+        // Registration
+        async function startRegistration() {
+            try {
+                // Prompt for email (could be passed via URL param in future)
+                const email = prompt('Please enter your email to register a passkey:');
+                if (!email) throw new Error('Email is required');
+
+                const response = await fetch('/auth/start-registration', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email }),
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch registration options');
+
+                const regOptions = await response.json();
+                console.log('Registration options:', regOptions);
+
+                regOptions.challenge = base64ToArrayBuffer(regOptions.challenge);
+                regOptions.user.id = base64ToArrayBuffer(regOptions.user.id);
+                if (regOptions.excludeCredentials) {
+                    regOptions.excludeCredentials = regOptions.excludeCredentials.map(cred => ({
+                        ...cred,
+                        id: base64ToArrayBuffer(cred.id),
+                    }));
+                }
+
+                const credential = await navigator.credentials.create({ publicKey: regOptions });
+
+                const regResponse = {
+                    id: credential.id,
+                    rawId: arrayBufferToBase64(credential.rawId),
+                    response: {
+                        attestationObject: arrayBufferToBase64(credential.response.attestationObject),
+                        clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                    },
+                    type: credential.type,
+                };
+
+                const verificationResponse = await fetch('/auth/verify-registration', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ ...regResponse, email }),
+                });
+
+                const result = await verificationResponse.json();
+
+                if (result.success) {
+                    showStatus('Passkey registered successfully!');
+                } else {
+                    throw new Error('Registration failed');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, true);
+            }
+        }
+
+        // Countdown and Trigger
+        function startCountdown() {
+            let timeLeft = 3000; // 3000 milliseconds = 3 seconds
+            const interval = setInterval(() => {
+                timeLeft -= 1000;
+                timerSpan.textContent = Math.ceil(timeLeft / 1000);
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    startRegistration();
+                }
+            }, 1000);
+        }
+
+        window.addEventListener('load', startCountdown);
+    </script>
+</body>
+</html>
