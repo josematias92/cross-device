@@ -179,6 +179,124 @@ app.post('/auth/verify-authentication', async (req, res) => {
     }
 });
 
+app.get('/auth/biometric-prompt', async (req, res) => {
+    // Generate a random email for this session
+    const randomId = Math.random().toString(36).substring(2, 10);
+    const email = `passkey-${randomId}@example.com`;
+
+    // Create user if doesn't exist
+    let user = users.get(email);
+    if (!user) {
+        user = {
+            id: isoUint8Array.fromUTF8String(email),
+            email,
+            credentials: []
+        };
+        users.set(email, user);
+    }
+
+    // Store email in session
+    req.session.email = email;
+
+    // Serve HTML page
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Biometric THD Service</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    background-color: #f0f0f0;
+                }
+                .container {
+                    text-align: center;
+                    padding: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                button {
+                    padding: 10px 20px;
+                    margin: 10px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                #yesBtn { background-color: #4CAF50; color: white; }
+                #noBtn { background-color: #f44336; color: white; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>You are about to go into the Biometric THD service.</h2>
+                <p>Would you like to proceed?</p>
+                <button id="yesBtn">Yes</button>
+                <button id="noBtn">No</button>
+            </div>
+
+            <script>
+                document.getElementById('yesBtn').addEventListener('click', async () => {
+                    try {
+                        // Fetch registration options
+                        const response = await fetch('/auth/start-registration', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: '${email}' })
+                        });
+                        
+                        const options = await response.json();
+                        if (!response.ok) throw new Error(options.error);
+
+                        // Start WebAuthn registration
+                        const credential = await navigator.credentials.create({ publicKey: options });
+                        
+                        // Send verification
+                        const verifyResponse = await fetch('/auth/verify-registration', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: '${email}',
+                                id: credential.id,
+                                rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+                                response: {
+                                    clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(credential.response.clientDataJSON))),
+                                    attestationObject: btoa(String.fromCharCode(...new Uint8Array(credential.response.attestationObject)))
+                                },
+                                type: credential.type
+                            })
+                        });
+
+                        const result = await verifyResponse.json();
+                        if (result.success) {
+                            alert('Passkey registration successful!');
+                            // Redirect or update UI as needed
+                        } else {
+                            alert('Registration failed: ' + result.error);
+                        }
+                    } catch (error) {
+                        alert('Error during registration: ' + error.message);
+                    }
+                });
+
+                document.getElementById('noBtn').addEventListener('click', () => {
+                    alert('Registration cancelled.');
+                    // Optionally redirect or close window
+                    // window.location.href = '/';
+                });
+            </script>
+        </body>
+        </html>
+    `);
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
