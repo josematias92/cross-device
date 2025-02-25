@@ -180,7 +180,7 @@ app.post('/auth/verify-authentication', async (req, res) => {
 });
 
 app.get('/auth/biometric-prompt', async (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+    res.sendFile(path.join(__dirname, 'public', 'registerv2.html'));
 });
 
 app.listen(PORT, () => {
