@@ -59,6 +59,8 @@
         </div>
     </div>
 
+    
+    <script src="https://unpkg.com/@simplewebauthn/browser@9.0.0/dist/index.umd.min.js"></script>
     <script>
         // --- Utility Functions ---
         function base64UrlToBase64(base64url) {
@@ -185,61 +187,60 @@
         }
 
         // --- Authentication ---
-        async function startAuthentication() {
+          const { startAuthentication } = SimpleWebAuthnBrowser;
+
+            async function startAuthentication() {
+            const emailInput = document.getElementById('email');
+            const messageElement = document.getElementById('message');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                messageElement.textContent = 'Please enter an email.';
+                messageElement.className = 'error';
+                return;
+            }
+
             try {
-                const email = getEmail();
-                toggleSpinner(true);
-
-                const response = await fetch('/auth/start-authentication', {
+                // Step 1: Request authentication options from the server
+                const response = await fetch('http://localhost:3000/auth/start-authentication', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ email }),
+                    body: JSON.stringify({ email })
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch authentication options');
+                const options = await response.json();
 
-                const authOptions = await response.json();
-                authOptions.challenge = base64ToArrayBuffer(authOptions.challenge);
-                authOptions.allowCredentials = authOptions.allowCredentials.map(cred => ({
-                    ...cred,
-                    id: base64ToArrayBuffer(cred.id),
-                }));
+                if (!response.ok) {
+                    throw new Error(options.error || 'Failed to start authentication');
+                }
 
-                const credential = await navigator.credentials.get({ publicKey: authOptions });
+                // Step 2: Use WebAuthn to get the authentication response
+                const authResponse = await startAuthentication(options);
 
-                const authResponse = {
-                    id: credential.id,
-                    rawId: arrayBufferToBase64(credential.rawId),
-                    response: {
-                        authenticatorData: arrayBufferToBase64(credential.response.authenticatorData),
-                        clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
-                        signature: arrayBufferToBase64(credential.response.signature),
-                        userHandle: credential.response.userHandle
-                            ? arrayBufferToBase64(credential.response.userHandle)
-                            : null,
-                    },
-                    type: credential.type,
-                };
-
-                const verificationResponse = await fetch('/auth/verify-authentication', {
+                // Step 3: Send the authentication response to the server for verification
+                const verifyResponse = await fetch('http://localhost:3000/auth/verify-authentication', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ ...authResponse, email }),
+                    body: JSON.stringify({
+                        email,
+                        id: authResponse.id,
+                        rawId: authResponse.rawId,
+                        response: authResponse.response,
+                        type: authResponse.type
+                    })
                 });
 
-                const result = await verificationResponse.json();
-                toggleSpinner(false);
+                const verificationResult = await verifyResponse.json();
 
-                if (result.success) {
-                    showStatus('Authentication successful!');
+                if (verifyResponse.ok && verificationResult.success) {
+                    messageElement.textContent = 'Authentication successful!';
+                    messageElement.className = 'success';
                 } else {
-                    throw new Error('Authentication failed');
+                    throw new Error(verificationResult.error || 'Verification failed');
                 }
             } catch (error) {
-                toggleSpinner(false);
-                showStatus('Error: ' + error.message, true);
+                messageElement.textContent = error.message;
+                messageElement.className = 'error';
             }
         }
 
