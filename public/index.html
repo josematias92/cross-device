@@ -20,8 +20,6 @@
         .fade-in { animation: fadeIn 0.5s ease-out; }
         .bg-gradient { background: linear-gradient(135deg, #6b7280, #1f2937); }
     </style>
-    <!-- Tailwind CSS styles (unchanged) -->
-    <style>/* ... (previous Tailwind CSS styles remain unchanged) */</style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
     <div class="bg-gradient p-8 rounded-xl shadow-2xl max-w-md w-full">
@@ -44,6 +42,12 @@
             <button id="authButton" class="w-full py-3 px-6 bg-teal-600 hover:bg-teal-700 rounded-lg text-lg font-semibold transition-all duration-300 pulse">
                 Authenticate
             </button>
+        </div>
+
+        <!-- Biometric QR Code Section -->
+        <div class="mt-6 text-center">
+            <p class="text-sm font-medium text-indigo-300 mb-2">Scan for Biometric THD Registration</p>
+            <img id="biometricQrCode" class="mx-auto w-40 h-40 p-2 bg-white rounded-lg shadow-md" alt="QR Code for Biometric THD Registration">
         </div>
 
         <!-- Loading Spinner -->
@@ -85,13 +89,14 @@
                 binary += String.fromCharCode(bytes[i]);
             }
             const base64 = window.btoa(binary);
-            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); // Convert to base64url
+            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         }
 
         // --- UI Helpers ---
         const statusDiv = document.getElementById('status');
         const spinner = document.getElementById('spinner');
         const emailInput = document.getElementById('email');
+        const biometricQrCodeImg = document.getElementById('biometricQrCode');
         
         function showStatus(message, isError = false) {
             statusDiv.textContent = message;
@@ -110,6 +115,17 @@
             return email;
         }
 
+        // --- Generate Biometric QR Code ---
+        async function generateBiometricQRCode() {
+            try {
+                const biometricUrl = `${window.location.origin}/auth/biometric-prompt`;
+                const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(biometricUrl)}`;
+                biometricQrCodeImg.src = qrCodeUrl;
+            } catch (error) {
+                showStatus('Error generating QR code: ' + error.message, true);
+            }
+        }
+
         // --- Registration ---
         async function startRegistration() {
             try {
@@ -126,8 +142,6 @@
                 if (!response.ok) throw new Error('Failed to fetch registration options');
 
                 const regOptions = await response.json();
-                console.log('Registration options:', regOptions);
-
                 regOptions.challenge = base64ToArrayBuffer(regOptions.challenge);
                 regOptions.user.id = base64ToArrayBuffer(regOptions.user.id);
                 if (regOptions.excludeCredentials) {
@@ -186,8 +200,6 @@
                 if (!response.ok) throw new Error('Failed to fetch authentication options');
 
                 const authOptions = await response.json();
-                console.log('Authentication options:', authOptions);
-
                 authOptions.challenge = base64ToArrayBuffer(authOptions.challenge);
                 authOptions.allowCredentials = authOptions.allowCredentials.map(cred => ({
                     ...cred,
@@ -231,9 +243,10 @@
             }
         }
 
-        // --- Event Listeners ---
+        // --- Event Listeners and Initialization ---
         document.getElementById('registerButton').addEventListener('click', startRegistration);
         document.getElementById('authButton').addEventListener('click', startAuthentication);
+        window.addEventListener('load', generateBiometricQRCode);
     </script>
 </body>
 </html>
