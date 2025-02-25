@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passkey Portal</title>
+    <title>Passkey Registration & Authentication</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -23,10 +23,10 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
     <div class="bg-gradient p-8 rounded-xl shadow-2xl max-w-md w-full">
-        <h1 class="text-3xl font-bold text-center mb-6 text-indigo-300">Passkey Portal</h1>
+        <h1 class="text-3xl font-bold text-center mb-6 text-indigo-300">Passkey Manager</h1>
         
         <!-- Status Message -->
-        <div id="status" class="text-center mb-6 p-4 rounded-lg bg-gray-800 fade-in bg-red-600 hidden">Error: Failed to fetch registration options</div>
+        <div id="status" class="text-center mb-6 p-4 rounded-lg bg-gray-800 fade-in hidden"></div>
 
         <!-- Email Input -->
         <div class="mb-4">
@@ -44,12 +44,6 @@
             </button>
         </div>
 
-        <!-- Biometric QR Code Section -->
-        <div class="mt-6 text-center">
-            <p class="text-sm font-medium text-indigo-300 mb-2">Scan for Biometric THD Registration</p>
-            <img id="biometricQrCode" class="mx-auto w-40 h-40 p-2 bg-white rounded-lg shadow-md" alt="QR Code for Biometric THD Registration">
-        </div>
-
         <!-- Loading Spinner -->
         <div id="spinner" class="mt-6 flex justify-center hidden">
             <svg class="animate-spin h-8 w-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -61,28 +55,15 @@
 
     <script>
         // --- Utility Functions ---
-        function base64UrlToBase64(base64url) {
-            return base64url.replace(/-/g, '+').replace(/_/g, '/');
-        }
-
         function base64ToArrayBuffer(base64) {
-            try {
-                if (typeof base64 !== 'string') {
-                    throw new Error('Base64 input must be a string');
-                }
-                const standardBase64 = base64UrlToBase64(base64);
-                const paddedBase64 = standardBase64.padEnd(standardBase64.length + (4 - standardBase64.length % 4) % 4, '=');
-                const binaryString = window.atob(paddedBase64);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                return bytes.buffer;
-            } catch (error) {
-                console.error('Base64 decoding error:', error, 'Input:', base64);
-                throw new Error('Invalid base64 string: ' + error.message);
+            const standardBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+            const paddedBase64 = standardBase64.padEnd(standardBase64.length + (4 - standardBase64.length % 4) % 4, '=');
+            const binaryString = window.atob(paddedBase64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
             }
+            return bytes.buffer;
         }
 
         function arrayBufferToBase64(buffer) {
@@ -91,16 +72,14 @@
             for (let i = 0; i < bytes.byteLength; i++) {
                 binary += String.fromCharCode(bytes[i]);
             }
-            const base64 = window.btoa(binary);
-            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         }
 
         // --- UI Helpers ---
         const statusDiv = document.getElementById('status');
         const spinner = document.getElementById('spinner');
         const emailInput = document.getElementById('email');
-        const biometricQrCodeImg = document.getElementById('biometricQrCode');
-        
+
         function showStatus(message, isError = false) {
             statusDiv.textContent = message;
             statusDiv.classList.remove('hidden', 'bg-green-600', 'bg-red-600');
@@ -118,152 +97,144 @@
             return email;
         }
 
-        // --- Generate Biometric QR Code ---
-        async function generateBiometricQRCode() {
-            try {
-                const biometricUrl = `${window.location.origin}/auth/biometric-prompt`;
-                const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(biometricUrl)}`;
-                biometricQrCodeImg.src = qrCodeUrl;
-            } catch (error) {
-                showStatus('Error generating QR code: ' + error.message, true);
-            }
-        }
-
         // --- Registration ---
         async function startRegistration() {
             try {
                 const email = getEmail();
                 toggleSpinner(true);
 
-                const response = await fetch('/auth/start-registration', {
+                // Step 1: Fetch registration options (assuming /auth/start-registration exists)
+                const regResponse = await fetch('/auth/start-registration', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ email }),
+                    body: JSON.stringify({ email })
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
+                if (!regResponse.ok) {
+                    const errorData = await regResponse.json();
                     throw new Error(errorData.error || 'Failed to fetch registration options');
                 }
 
-                const regOptions = await response.json();
-                console.log('Raw registration options from server:', regOptions);
-
-                // Convert base64url strings to ArrayBuffer as required by WebAuthn
+                const regOptions = await regResponse.json();
                 regOptions.challenge = base64ToArrayBuffer(regOptions.challenge);
                 regOptions.user.id = base64ToArrayBuffer(regOptions.user.id);
-
-                // Handle excludeCredentials if present
                 if (regOptions.excludeCredentials && Array.isArray(regOptions.excludeCredentials)) {
                     regOptions.excludeCredentials = regOptions.excludeCredentials.map(cred => ({
                         ...cred,
                         id: base64ToArrayBuffer(cred.id)
                     }));
-                } else {
-                    regOptions.excludeCredentials = []; // Ensure it’s an empty array if not provided
                 }
 
-                console.log('Processed registration options:', regOptions);
-
+                // Step 2: Create credential
                 const credential = await navigator.credentials.create({ publicKey: regOptions });
-                console.log('Created credential:', credential);
 
-                const regResponse = {
+                // Step 3: Verify registration
+                const regData = {
+                    email,
                     id: credential.id,
                     rawId: arrayBufferToBase64(credential.rawId),
                     response: {
-                        attestationObject: arrayBufferToBase64(credential.response.attestationObject),
                         clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                        attestationObject: arrayBufferToBase64(credential.response.attestationObject)
                     },
-                    type: credential.type,
+                    type: credential.type
                 };
 
-                const verificationResponse = await fetch('/auth/verify-registration', {
+                const verifyResponse = await fetch('/auth/verify-registration', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ ...regResponse, email }),
+                    body: JSON.stringify(regData)
                 });
 
-                const result = await verificationResponse.json();
+                const result = await verifyResponse.json();
                 toggleSpinner(false);
 
                 if (result.success) {
                     showStatus('Passkey registered successfully!');
                 } else {
-                    throw new Error(result.error || 'Registration verification failed');
+                    throw new Error(result.error || 'Verification failed');
                 }
             } catch (error) {
                 toggleSpinner(false);
                 showStatus('Error during registration: ' + error.message, true);
-                console.error('Registration error:', error);
+                console.error(error);
             }
         }
 
-        // --- Authentication (unchanged for brevity) ---
+        // --- Authentication ---
         async function startAuthentication() {
             try {
                 const email = getEmail();
                 toggleSpinner(true);
 
-                const response = await fetch('/auth/start-authentication', {
+                // Step 1: Fetch authentication options
+                const authResponse = await fetch('/auth/start-authentication', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ email }),
+                    body: JSON.stringify({ email })
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch authentication options');
+                if (!authResponse.ok) {
+                    const errorData = await authResponse.json();
+                    throw new Error(errorData.error || 'Failed to fetch authentication options');
+                }
 
-                const authOptions = await response.json();
+                const authOptions = await authResponse.json();
                 authOptions.challenge = base64ToArrayBuffer(authOptions.challenge);
-                authOptions.allowCredentials = authOptions.allowCredentials.map(cred => ({
-                    ...cred,
-                    id: base64ToArrayBuffer(cred.id),
-                }));
+                if (authOptions.allowCredentials && Array.isArray(authOptions.allowCredentials)) {
+                    authOptions.allowCredentials = authOptions.allowCredentials.map(cred => ({
+                        ...cred,
+                        id: base64ToArrayBuffer(cred.id)
+                    }));
+                }
 
+                // Step 2: Get credential
                 const credential = await navigator.credentials.get({ publicKey: authOptions });
 
-                const authResponse = {
+                // Note: This endpoint doesn't have a corresponding verify-authentication in the provided BE,
+                // so this is a placeholder assuming a similar structure
+                const authData = {
+                    email,
                     id: credential.id,
                     rawId: arrayBufferToBase64(credential.rawId),
                     response: {
-                        authenticatorData: arrayBufferToBase64(credential.response.authenticatorData),
                         clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                        authenticatorData: arrayBufferToBase64(credential.response.authenticatorData),
                         signature: arrayBufferToBase64(credential.response.signature),
-                        userHandle: credential.response.userHandle
-                            ? arrayBufferToBase64(credential.response.userHandle)
-                            : null,
+                        userHandle: credential.response.userHandle ? arrayBufferToBase64(credential.response.userHandle) : null
                     },
-                    type: credential.type,
+                    type: credential.type
                 };
 
-                const verificationResponse = await fetch('/auth/verify-authentication', {
+                // Assuming a /auth/verify-authentication endpoint exists
+                const verifyResponse = await fetch('/auth/verify-authentication', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ ...authResponse, email }),
+                    body: JSON.stringify(authData)
                 });
 
-                const result = await verificationResponse.json();
+                const result = await verifyResponse.json();
                 toggleSpinner(false);
 
                 if (result.success) {
                     showStatus('Authentication successful!');
                 } else {
-                    throw new Error('Authentication failed');
+                    throw new Error(result.error || 'Authentication failed');
                 }
             } catch (error) {
                 toggleSpinner(false);
-                showStatus('Error: ' + error.message, true);
+                showStatus('Error during authentication: ' + error.message, true);
+                console.error(error);
             }
         }
 
-        // --- Event Listeners and Initialization ---
+        // --- Event Listeners ---
         document.getElementById('registerButton').addEventListener('click', startRegistration);
         document.getElementById('authButton').addEventListener('click', startAuthentication);
-        window.addEventListener('load', generateBiometricQRCode);
     </script>
 </body>
 </html>
