@@ -54,6 +54,7 @@ app.post('/generate-registration-options', (req, res) => {
     userName: user.username,
     attestationType: 'none',
     });
+    console.log(registrationOptions, "registrationOptions")
     res.json(registrationOptions);
   } catch(e) {
     res.status(400).json({e})
