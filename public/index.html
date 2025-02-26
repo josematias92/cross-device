@@ -172,6 +172,9 @@
         });
         const registrationOptions = await registrationOptionsResponse.json();
 
+        console.log(registrationOptions.challenge)
+        console.log(registrationOptions.user.id)
+
         registrationOptions.challenge = base64ToArrayBuffer(registrationOptions.challenge);
         registrationOptions.user.id = base64ToArrayBuffer(registrationOptions.user.id);
 
