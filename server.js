@@ -17,19 +17,19 @@ app.use(express.json());
 // In-memory storage (replace with a database in production)
 const users = {}; // { username: { id: Buffer, devices: [] } }
 
+setInterval(() => {
+  console.log({users});
+}, 20000);
+
 // Relying Party (RP) configuration
 const rpID = 'mex-node.space'; // Use your domain in production
 const rpName = 'Passkey Backend';
-const expectedOrigin = 'https://mex-node.space'; // Adjust based on your frontend origin
+const expectedOrigin = 'https://mex-node.space/'; // Adjust based on your frontend origin
 
 // Generate a random user ID
 function generateUserID() {
   return crypto.randomBytes(16); // Returns a Buffer
 }
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
 // Registration: Generate options
 app.post('/register/options', async (req, res) => {
@@ -107,7 +107,11 @@ app.post('/auth/options', async (req, res) => {
     return res.status(404).json({ error: 'User or passkey not found' });
   }
 
+  console.log({user: user}, "inside auth options");
+  console.log(user.devices, "inside auth options user.devices");
+
   try {
+
     const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials: user.devices.map(device => ({
