@@ -54,11 +54,12 @@ app.post('/generate-registration-options', (req, res) => {
     userName: user.username,
     attestationType: 'none',
     });
+    res.json(registrationOptions);
   } catch(e) {
     res.status(400).json({e})
   }
 
-  res.json(registrationOptions);
+ 
 });
 
 // Verify registration response
