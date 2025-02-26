@@ -37,8 +37,9 @@ app.post('/generate-registration-options', (req, res) => {
     return res.status(400).json({ error: 'Username is required' });
   }
 
+  const userID = generateUserID(); // Generate a Buffer userID
   const user = {
-    id: generateUserID(), // Generate a binary userID
+    id: userID,
     username,
     devices: [],
   };
