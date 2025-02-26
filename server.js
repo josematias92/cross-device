@@ -20,7 +20,7 @@ const users = {}; // { username: { id: Buffer, devices: [] } }
 // Relying Party (RP) configuration
 const rpID = 'mex-node.space'; // Use your domain in production
 const rpName = 'Passkey Backend';
-const expectedOrigin = 'https://mex-node.space/'; // Adjust based on your frontend origin
+const expectedOrigin = 'https://mex-node.space'; // Adjust based on your frontend origin
 
 // Generate a random user ID
 function generateUserID() {
