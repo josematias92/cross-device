@@ -1,168 +1,143 @@
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
-const crypto = require('crypto');
-const path = require('path')
+const {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} = require('@simplewebauthn/server');
 
 const app = express();
 const port = 4000;
 
 // Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
-// Configuration
-const rpId = 'mex-node.space'; // Update to your domain in production
-const rpName = 'PasskeyApp';
-const origin = 'https://mex-node.space/'; // Update for production
+// In-memory storage for user credentials (replace with a database in production)
+const users = {};
 
-// In-memory storage (replace with database in production)
-const users = new Map(); // { email: { id: Buffer, credentials: [{ id: Buffer, publicKey: Buffer }] } }
-const challenges = new Map(); // { email: Buffer }
+// Helper function to generate a random buffer for userID
+function generateUserID() {
+  return Buffer.from(crypto.randomBytes(16)).toString('base64url');
+}
 
-// Base64url encoding/decoding
-const base64urlEncode = (buffer) => Buffer.from(buffer).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-const base64urlDecode = (str) => Buffer.from(str.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+// Routes
 
-app.use(express.static('public'));
+// Generate registration options
+app.post('/generate-registration-options', (req, res) => {
+  const { username } = req.body;
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
-    if (err) {
-      res.status(500).send('Error loading authentication page');
-    }
-  });
-});
-
-// Registration Options
-app.get('/register-options', (req, res) => {
-  const email = req.query.email;
-  if (!email || !email.includes('@')) {
-    return res.status(400).json({ error: 'Valid email required' });
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required' });
   }
 
-  if (!users.has(email)) {
-    const userId = crypto.randomBytes(16);
-    users.set(email, { id: userId, credentials: [] });
-  }
-
-  const user = users.get(email);
-  const challenge = crypto.randomBytes(32);
-  challenges.set(email, challenge);
-
-  const options = {
-    challenge: base64urlEncode(challenge),
-    rp: { name: rpName, id: rpId },
-    user: {
-      id: base64urlEncode(user.id),
-      name: email,
-      displayName: email.split('@')[0],
-    },
-    pubKeyCredParams: [{ type: 'public-key', alg: -7 }], // ES256
-    timeout: 60000,
-    authenticatorSelection: {
-      authenticatorAttachment: 'platform',
-      requireResidentKey: true,
-      userVerification: 'preferred',
-    },
-    attestation: 'none',
+  const user = {
+    id: generateUserID(), // Generate a binary userID
+    username,
+    devices: [],
   };
 
-  res.json(options);
+  users[user.id] = user;
+
+  const registrationOptions = generateRegistrationOptions({
+    rpName: 'WebAuthn Example',
+    rpID: 'mex-node.space',
+    userID: user.id, // Pass the binary userID
+    userName: user.username,
+    attestationType: 'none',
+  });
+
+  res.json(registrationOptions);
 });
 
-// Register Passkey
-app.post('/register', (req, res) => {
-  const { email, response } = req.body;
-  const user = users.get(email);
-  const expectedChallenge = challenges.get(email);
+// Verify registration response
+app.post('/verify-registration', async (req, res) => {
+  const { body } = req;
+  const user = users[body.userID];
 
-  if (!user || !expectedChallenge) {
-    return res.status(400).json({ error: 'User or challenge not found' });
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
   }
 
   try {
-    const clientDataJSON = base64urlDecode(response.response.clientDataJSON);
-    const clientData = JSON.parse(clientDataJSON.toString());
+    const verification = await verifyRegistrationResponse({
+      credential: body,
+      expectedChallenge: user.currentChallenge,
+      expectedOrigin: 'https://mex-node.space',
+      expectedRPID: 'mex-node.space',
+    });
 
-    if (clientData.challenge !== base64urlEncode(expectedChallenge)) {
-      return res.status(400).json({ error: 'Invalid challenge' });
+    if (verification.verified) {
+      user.devices.push(verification.registrationInfo);
+      return res.json({ verified: true });
+    } else {
+      return res.status(400).json({ error: 'Verification failed' });
     }
-    if (clientData.origin !== origin) {
-      return res.status(400).json({ error: 'Invalid origin' });
-    }
-
-    const credentialId = base64urlDecode(response.id);
-    const publicKey = base64urlDecode(response.response.attestationObject); // Simplified
-    user.credentials.push({ id: credentialId, publicKey });
-
-    challenges.delete(email);
-    res.json({ success: true });
   } catch (error) {
-    res.status(400).json({ error: 'Registration failed' });
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Authentication Options
-app.get('/auth-options', (req, res) => {
-  const email = req.query.email;
-  const user = users.get(email);
+// Generate authentication options
+app.post('/generate-authentication-options', (req, res) => {
+  const { username } = req.body;
 
-  if (!email || !user || user.credentials.length === 0) {
-    return res.status(400).json({ error: 'User not found or no passkeys' });
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required' });
   }
 
-  const challenge = crypto.randomBytes(32);
-  challenges.set(email, challenge);
+  const user = Object.values(users).find((u) => u.username === username);
 
-  const options = {
-    challenge: base64urlEncode(challenge),
-    rpId,
-    allowCredentials: user.credentials.map(cred => ({
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const authenticationOptions = generateAuthenticationOptions({
+    allowCredentials: user.devices.map((device) => ({
+      id: device.credentialID,
       type: 'public-key',
-      id: base64urlEncode(cred.id),
-      transports: ['internal', 'hybrid'],
     })),
     userVerification: 'preferred',
-    timeout: 60000,
-  };
+  });
 
-  res.json(options);
+  user.currentChallenge = authenticationOptions.challenge;
+
+  res.json(authenticationOptions);
 });
 
-// Authenticate Passkey
-app.post('/authenticate', (req, res) => {
-  const { email, response } = req.body;
-  const user = users.get(email);
-  const expectedChallenge = challenges.get(email);
+// Verify authentication response
+app.post('/verify-authentication', async (req, res) => {
+  const { body } = req;
+  const user = Object.values(users).find((u) => u.devices.some((d) => d.credentialID === body.id));
 
-  if (!user || !expectedChallenge) {
-    return res.status(400).json({ error: 'User or challenge not found' });
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
   }
 
   try {
-    const clientDataJSON = base64urlDecode(response.response.clientDataJSON);
-    const clientData = JSON.parse(clientDataJSON.toString());
+    const verification = await verifyAuthenticationResponse({
+      credential: body,
+      expectedChallenge: user.currentChallenge,
+      expectedOrigin: 'https://mex-node.space',
+      expectedRPID: 'mex-node.space',
+      authenticator: user.devices.find((d) => d.credentialID === body.id),
+    });
 
-    if (clientData.challenge !== base64urlEncode(expectedChallenge)) {
-      return res.status(400).json({ error: 'Invalid challenge' });
+    if (verification.verified) {
+      return res.json({ verified: true });
+    } else {
+      return res.status(400).json({ error: 'Verification failed' });
     }
-    if (clientData.origin !== origin) {
-      return res.status(400).json({ error: 'Invalid origin' });
-    }
-
-    const credentialId = base64urlDecode(response.id);
-    const credential = user.credentials.find(cred => cred.id.equals(credentialId));
-    if (!credential) {
-      return res.status(400).json({ error: 'Credential not found' });
-    }
-
-    challenges.delete(email);
-    res.json({ success: true });
   } catch (error) {
-    res.status(400).json({ error: 'Authentication failed' });
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Start server
+// Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
