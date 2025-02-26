@@ -186,14 +186,24 @@
         });
 
         // Step 3: Verify the registration response
-        const verificationResponse = await fetch(`${serverUrl}/verify-registration`, {
+        const credentialResponse = {
+          id: credential.id,
+          type: credential.type,
+          rawId: arrayBufferToBase64(credential.rawId),
+          response: {
+            clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+            attestationObject: arrayBufferToBase64(credential.response.attestationObject),
+          },
+          userID: registrationOptions.user.id, // Use user.id as base64url string
+        };
+
+        const verificationResponse = await fetch(serverUrl + '/verify-registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...credential,
-            userID: registrationOptions.user.id,
-          }),
+          body: JSON.stringify(credentialResponse),
         });
+
+        
         const verificationResult = await verificationResponse.json();
 
         if (verificationResult.verified) {
