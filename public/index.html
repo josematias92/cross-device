@@ -187,62 +187,7 @@
         }
 
         // --- Authentication ---
-          const { startAuthentication } = SimpleWebAuthnBrowser;
-
-            async function startAuthenticationv2() {
-            const emailInput = document.getElementById('email');
-            const messageElement = document.getElementById('message');
-            const email = emailInput.value.trim();
-
-            if (!email) {
-                messageElement.textContent = 'Please enter an email.';
-                messageElement.className = 'error';
-                return;
-            }
-
-            try {
-                // Step 1: Request authentication options from the server
-                const response = await fetch('/auth/start-authentication', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-
-                const options = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(options.error || 'Failed to start authentication');
-                }
-
-                // Step 2: Use WebAuthn to get the authentication response
-                const authResponse = await startAuthenticationv2(options);
-
-                // Step 3: Send the authentication response to the server for verification
-                const verifyResponse = await fetch('/auth/verify-authentication', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email,
-                        id: authResponse.id,
-                        rawId: authResponse.rawId,
-                        response: authResponse.response,
-                        type: authResponse.type
-                    })
-                });
-
-                const verificationResult = await verifyResponse.json();
-
-                if (verifyResponse.ok && verificationResult.success) {
-                    messageElement.textContent = 'Authentication successful!';
-                    messageElement.className = 'success';
-                } else {
-                    throw new Error(verificationResult.error || 'Verification failed');
-                }
-            } catch (error) {
-                messageElement.textContent = error.message;
-                messageElement.className = 'error';
-            }
-        }
+          
 
         // --- Event Listeners and Initialization ---
         document.getElementById('registerButton').addEventListener('click', startRegistration);
