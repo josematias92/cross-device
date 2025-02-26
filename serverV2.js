@@ -8,7 +8,7 @@ const {
 } = require('@simplewebauthn/server');
 
 const app = express();
-const port = 3000;
+const port = 4000;
 
 // In-memory storage (replace with a real database in production)
 const users = new Map(); // { username: { id: Buffer, credentials: Array } }
@@ -19,9 +19,9 @@ app.use(bodyParser.json());
 app.use(express.static('public')); // Serve frontend files from 'public' folder
 
 // Configuration
-const rpID = 'localhost'; // Relying Party ID (your domain in production)
+const rpID = 'mex-node.space'; // Relying Party ID (your domain in production)
 const rpName = 'HomeDepot';
-const expectedOrigin = 'http://localhost:3000'; // Update for production
+const expectedOrigin = 'https://mex-node.space/'; // Update for production
 
 // Registration: Generate options
 app.get('/register-options', (req, res) => {
