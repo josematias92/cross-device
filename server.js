@@ -1,9 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const crypto = require('crypto');
-const path = require('path');
-// const crypto = require('crypto'); // Add this for Buffer generation
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -14,145 +11,151 @@ const {
 const app = express();
 const port = 4000;
 
-
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// In-memory storage for user credentials (replace with a database in production)
-const users = {};
+// In-memory storage (replace with DB in production)
+const users = {}; // { username: { id: Buffer, devices: [] } }
 
-// Helper function to generate a random buffer for userID
+// RP (Relying Party) details
+const rpID = 'mex-node.space'; // Use your domain in production
+const rpName = 'Passkey Example';
+const expectedOrigin = 'https://mex-node.space'; // Adjust to FE origin
+
+// Generate a random Buffer for userID
 function generateUserID() {
-  return crypto.randomBytes(16); // Returns a Buffer
+  return crypto.randomBytes(16); // 16-byte Buffer
 }
 
-// Routes
-
-// Generate registration options
-app.post('/generate-registration-options', async (req, res) => {
+// Registration: Generate options
+app.post('/register/options', async (req, res) => {
   const { username } = req.body;
-
   if (!username) {
     return res.status(400).json({ error: 'Username is required' });
   }
 
-  const userID = generateUserID(); // Generate a Buffer userID
-  const user = {
-    id: userID,
-    username,
-    devices: [],
-  };
+  const userID = generateUserID();
+  const user = { id: userID, username, devices: [] };
+  users[username] = user; // Store by username for simplicity
 
-  users[userID.toString('base64')] = user;
-
-  try {
-    const registrationOptions = await generateRegistrationOptions({
-    rpName: 'WebAuthn Example',
-    rpID: 'mex-node.space',
-    userID: user.id, // Pass the binary userID
-    userName: user.username,
+  const options = await generateRegistrationOptions({
+    rpName,
+    rpID,
+    userID: user.id, // Buffer
+    userName: username,
     attestationType: 'none',
-    });
-    console.log(registrationOptions, "registrationOptions")
-    res.json(registrationOptions);
-  } catch(e) {
-    res.status(400).json({e})
-  }
+    authenticatorSelection: {
+      userVerification: 'preferred', // For passkeys
+    },
+  });
 
- 
+  // Store challenge for verification
+  users[username].currentChallenge = options.challenge;
+
+  console.log('Registration Options:', options);
+  res.json(options);
 });
 
-// Verify registration response
-app.post('/verify-registration', async (req, res) => {
-  const { body } = req;
-  const user = users[body.userID];
+// Registration: Verify response
+app.post('/register/verify', async (req, res) => {
+  const { username, credential } = req.body;
+  if (!username || !credential) {
+    return res.status(400).json({ error: 'Username and credential required' });
+  }
 
+  const user = users[username];
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
 
   try {
     const verification = await verifyRegistrationResponse({
-      credential: body,
+      response: credential,
       expectedChallenge: user.currentChallenge,
-      expectedOrigin: 'https://mex-node.space',
-      expectedRPID: 'mex-node.space',
+      expectedOrigin,
+      expectedRPID: rpID,
     });
 
     if (verification.verified) {
       user.devices.push(verification.registrationInfo);
-      return res.json({ verified: true });
+      delete user.currentChallenge;
+      res.json({ verified: true });
     } else {
-      return res.status(400).json({ error: 'Verification failed' });
+      res.status(400).json({ error: 'Verification failed' });
     }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('Verification error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Generate authentication options
-app.post('/generate-authentication-options', (req, res) => {
+// Authentication: Generate options
+app.post('/auth/options', async (req, res) => {
   const { username } = req.body;
-
   if (!username) {
     return res.status(400).json({ error: 'Username is required' });
   }
 
-  const user = Object.values(users).find((u) => u.username === username);
-
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+  const user = users[username];
+  if (!user || !user.devices.length) {
+    return res.status(404).json({ error: 'User or credentials not found' });
   }
 
-  const authenticationOptions = generateAuthenticationOptions({
+  const options = await generateAuthenticationOptions({
+    rpID,
     allowCredentials: user.devices.map((device) => ({
-      id: device.credentialID,
+      id: device.credentialID, // Buffer
       type: 'public-key',
     })),
     userVerification: 'preferred',
   });
 
-  user.currentChallenge = authenticationOptions.challenge;
-
-  res.json(authenticationOptions);
+  user.currentChallenge = options.challenge;
+  console.log('Auth Options:', options);
+  res.json(options);
 });
 
-// Verify authentication response
-app.post('/verify-authentication', async (req, res) => {
-  const { body } = req;
-  const user = Object.values(users).find((u) => u.devices.some((d) => d.credentialID === body.id));
+// Authentication: Verify response
+app.post('/auth/verify', async (req, res) => {
+  const { username, credential } = req.body;
+  if (!username || !credential) {
+    return res.status(400).json({ error: 'Username and credential required' });
+  }
 
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+  const user = users[username];
+  if (!user || !user.devices.length) {
+    return res.status(404).json({ error: 'User or credentials not found' });
+  }
+
+  const authenticator = user.devices.find((device) =>
+    device.credentialID.equals(Buffer.from(credential.rawId, 'base64url'))
+  );
+  if (!authenticator) {
+    return res.status(400).json({ error: 'Authenticator not found' });
   }
 
   try {
     const verification = await verifyAuthenticationResponse({
-      credential: body,
+      response: credential,
       expectedChallenge: user.currentChallenge,
-      expectedOrigin: 'https://mex-node.space',
-      expectedRPID: 'mex-node.space',
-      authenticator: user.devices.find((d) => d.credentialID === body.id),
+      expectedOrigin,
+      expectedRPID: rpID,
+      authenticator,
     });
 
     if (verification.verified) {
-      return res.json({ verified: true });
+      delete user.currentChallenge;
+      res.json({ verified: true });
     } else {
-      return res.status(400).json({ error: 'Verification failed' });
+      res.status(400).json({ error: 'Verification failed' });
     }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('Verification error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
