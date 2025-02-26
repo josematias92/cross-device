@@ -83,11 +83,24 @@ app.post('/register/verify', async (req, res) => {
     });
 
     if (verification.verified) {
-      user.devices.push(verification.registrationInfo);
-      delete user.currentChallenge;
-      res.json({ verified: true });
+        // Log the registration info to inspect its structure
+        console.log('Registration info:', verification.registrationInfo);
+        
+        // Store credential information in the proper format
+        const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
+        
+        // Make sure we're storing the credential properly
+        user.devices.push({
+          credentialID,
+          credentialPublicKey,
+          counter,
+          transports: credential.response.transports || []
+        });
+        
+        delete user.currentChallenge;
+        res.json({ verified: true });
     } else {
-      res.status(400).json({ error: 'Verification failed' });
+        res.status(400).json({ error: 'Verification failed' });
     }
   } catch (error) {
     console.error('Error verifying registration:', error);
@@ -114,17 +127,20 @@ app.post('/auth/options', async (req, res) => {
       console.log(`User has ${user.devices.length} registered device(s)`);
       
       const allowCredentials = user.devices.map(device => {
-        // Ensure credential ID is properly formatted
-        const credentialID = device.credentialID;
-        console.log(`Credential ID type: ${typeof credentialID}, isBuffer: ${Buffer.isBuffer(credentialID)}`);
-        
-        return {
-          id: credentialID,
-          type: 'public-key',
-          // Adding these optional fields may help with some authenticators
-          transports: ['internal', 'usb', 'ble', 'nfc'],
-        };
-      });
+        // Improved logging
+      console.log('Device:', device);
+      console.log(`Credential ID exists: ${!!device.credentialID}`);
+
+      if (!device.credentialID) {
+        throw new Error('Missing credentialID in stored device');
+      }
+
+      return {
+        id: device.credentialID,
+        type: 'public-key',
+        transports: device.transports || ['internal', 'usb', 'ble', 'nfc'],
+      };
+    });
       
       const options = await generateAuthenticationOptions({
         rpID,
