@@ -40,7 +40,7 @@ const origin = `https://mex-node.space`;
 
 // Serve HTML at root endpoint
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'indexV2.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Registration Start
@@ -169,7 +169,7 @@ app.post('/auth/verify-authentication', async (req, res) => {
 });
 
 app.get('/auth/biometric-prompt', async (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'registerv2.html'));
+    res.sendFile(path.join(__dirname, 'public', 'registerv3.html'));
 });
 
 app.listen(PORT, () => {
