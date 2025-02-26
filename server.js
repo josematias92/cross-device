@@ -46,13 +46,17 @@ app.post('/generate-registration-options', (req, res) => {
 
   users[userID.toString('base64')] = user;
 
-  const registrationOptions = generateRegistrationOptions({
+  try {
+    const registrationOptions = generateRegistrationOptions({
     rpName: 'WebAuthn Example',
     rpID: 'mex-node.space',
     userID: user.id, // Pass the binary userID
     userName: user.username,
     attestationType: 'none',
-  });
+    });
+  } catch(e) {
+    res.status(400).json({e})
+  }
 
   res.json(registrationOptions);
 });
