@@ -1,150 +1,204 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Passkey Demo</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passkey Authentication Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .panel {
+            flex: 1;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        input {
+            padding: 8px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
 </head>
 <body>
-  <input id="username" placeholder="Username" />
-  <button id="registerBtn">Register</button>
-  <button id="authBtn">Authenticate</button>
-  <script type="module">
-    import simplewebauthnbrowser from 'https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.1.0/+esm'
-  </script>
-  <script type="module">
-    // Optional: Use @simplewebauthn/browser (uncomment if installed)
-    import { startRegistration, startAuthentication } from 'simplewebauthnbrowser';
-
-    // Base64url to ArrayBuffer
-    function base64urlToArrayBuffer(base64url) {
-      let str = base64url.replace(/-/g, '+').replace(/_/g, '/');
-      const padding = str.length % 4;
-      if (padding) str += '='.repeat(4 - padding);
-      const binary = window.atob(str);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return bytes.buffer;
-    }
-
-    // ArrayBuffer to Base64url
-    function arrayBufferToBase64url(buffer) {
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-      return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    }
-
-    // Register a passkey
-    async function register() {
-      const username = document.getElementById('username').value;
-      if (!username) return alert('Enter a username');
-
-      try {
-        // Get registration options
-        const resp = await fetch('http://localhost:4000/register/options', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username }),
+    <h1>Passkey Authentication Demo</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <h2>Register</h2>
+            <div>
+                <label for="registerUsername">Username:</label>
+                <input type="text" id="registerUsername" placeholder="Enter username to register">
+                <button id="registerButton">Register with Passkey</button>
+            </div>
+            <div id="registerStatus" class="status"></div>
+        </div>
+        
+        <div class="panel">
+            <h2>Login</h2>
+            <div>
+                <label for="loginUsername">Username:</label>
+                <input type="text" id="loginUsername" placeholder="Enter username to login">
+                <button id="loginButton">Login with Passkey</button>
+            </div>
+            <div id="loginStatus" class="status"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import WebAuthn browser libraries from CDN
+        import { startRegistration, startAuthentication } from 'https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@7/dist/bundle/index.js';
+        
+        const serverUrl = 'http://localhost:4000'; // Change to match your server URL
+        
+        // Registration process
+        document.getElementById('registerButton').addEventListener('click', async () => {
+            const username = document.getElementById('registerUsername').value.trim();
+            const statusElement = document.getElementById('registerStatus');
+            
+            if (!username) {
+                showStatus(statusElement, 'Please enter a username', false);
+                return;
+            }
+            
+            try {
+                // Step 1: Get registration options from the server
+                showStatus(statusElement, 'Requesting registration options...', true);
+                const optionsResponse = await fetch(`${serverUrl}/register/options`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                
+                if (!optionsResponse.ok) {
+                    const error = await optionsResponse.json();
+                    throw new Error(error.error || 'Failed to get registration options');
+                }
+                
+                const options = await optionsResponse.json();
+                showStatus(statusElement, 'Follow prompts on your device...', true);
+                
+                // Step 2: Start WebAuthn registration ceremony with the received options
+                const credential = await startRegistration(options);
+                
+                // Step 3: Send the credential to the server for verification
+                showStatus(statusElement, 'Verifying registration...', true);
+                const verificationResponse = await fetch(`${serverUrl}/register/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, credential })
+                });
+                
+                if (!verificationResponse.ok) {
+                    const error = await verificationResponse.json();
+                    throw new Error(error.error || 'Registration verification failed');
+                }
+                
+                const verification = await verificationResponse.json();
+                if (verification.verified) {
+                    showStatus(statusElement, 'Registration successful! You can now login.', true);
+                } else {
+                    showStatus(statusElement, 'Registration failed', false);
+                }
+                
+            } catch (error) {
+                showStatus(statusElement, `Error: ${error.message}`, false);
+                console.error(error);
+            }
         });
-        const options = await resp.json();
-
-        // Convert base64url to ArrayBuffer
-        options.challenge = base64urlToArrayBuffer(options.challenge);
-        options.user.id = base64urlToArrayBuffer(options.user.id);
-
-        // Create credential (without @simplewebauthn/browser)
-        const credential = await navigator.credentials.create({ publicKey: options });
-
-        // Prepare response
-        const credentialResponse = {
-          id: credential.id,
-          rawId: arrayBufferToBase64url(credential.rawId),
-          type: credential.type,
-          response: {
-            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
-            attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
-          },
-        };
-
-        // Verify with server
-        const verifyResp = await fetch('http://localhost:4000/register/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, credential: credentialResponse }),
+        
+        // Authentication process
+        document.getElementById('loginButton').addEventListener('click', async () => {
+            const username = document.getElementById('loginUsername').value.trim();
+            const statusElement = document.getElementById('loginStatus');
+            
+            if (!username) {
+                showStatus(statusElement, 'Please enter a username', false);
+                return;
+            }
+            
+            try {
+                // Step 1: Get authentication options from the server
+                showStatus(statusElement, 'Requesting authentication options...', true);
+                const optionsResponse = await fetch(`${serverUrl}/auth/options`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                
+                if (!optionsResponse.ok) {
+                    const error = await optionsResponse.json();
+                    throw new Error(error.error || 'Failed to get authentication options');
+                }
+                
+                const options = await optionsResponse.json();
+                showStatus(statusElement, 'Follow prompts on your device...', true);
+                
+                // Step 2: Start WebAuthn authentication ceremony with the received options
+                const credential = await startAuthentication(options);
+                
+                // Step 3: Send the credential to the server for verification
+                showStatus(statusElement, 'Verifying authentication...', true);
+                const verificationResponse = await fetch(`${serverUrl}/auth/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, credential })
+                });
+                
+                if (!verificationResponse.ok) {
+                    const error = await verificationResponse.json();
+                    throw new Error(error.error || 'Authentication verification failed');
+                }
+                
+                const verification = await verificationResponse.json();
+                if (verification.verified) {
+                    showStatus(statusElement, 'Authentication successful! You are now logged in.', true);
+                } else {
+                    showStatus(statusElement, 'Authentication failed', false);
+                }
+                
+            } catch (error) {
+                showStatus(statusElement, `Error: ${error.message}`, false);
+                console.error(error);
+            }
         });
-        const result = await verifyResp.json();
-
-        if (result.verified) {
-          alert('Registration successful!');
-        } else {
-          alert('Registration failed: ' + (result.error || 'Unknown error'));
+        
+        // Utility function to show status messages
+        function showStatus(element, message, isSuccess) {
+            element.textContent = message;
+            element.className = 'status ' + (isSuccess ? 'success' : 'error');
         }
-      } catch (error) {
-        console.error('Registration error:', error);
-        alert('Registration failed: ' + error.message);
-      }
-    }
-
-    // Authenticate with passkey
-    async function authenticate() {
-      const username = document.getElementById('username').value;
-      if (!username) return alert('Enter a username');
-
-      try {
-        // Get authentication options
-        const resp = await fetch('http://localhost:4000/auth/options', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username }),
-        });
-        const options = await resp.json();
-
-        // Convert base64url to ArrayBuffer
-        options.challenge = base64urlToArrayBuffer(options.challenge);
-        options.allowCredentials = options.allowCredentials.map(cred => ({
-          ...cred,
-          id: base64urlToArrayBuffer(cred.id),
-        }));
-
-        // Authenticate
-        const credential = await navigator.credentials.get({ publicKey: options });
-
-        // Prepare response
-        const credentialResponse = {
-          id: credential.id,
-          rawId: arrayBufferToBase64url(credential.rawId),
-          type: credential.type,
-          response: {
-            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
-            authenticatorData: arrayBufferToBase64url(credential.response.authenticatorData),
-            signature: arrayBufferToBase64url(credential.response.signature),
-            userHandle: credential.response.userHandle
-              ? arrayBufferToBase64url(credential.response.userHandle)
-              : null,
-          },
-        };
-
-        // Verify with server
-        const verifyResp = await fetch('http://localhost:4000/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, credential: credentialResponse }),
-        });
-        const result = await verifyResp.json();
-
-        if (result.verified) {
-          alert('Authentication successful!');
-        } else {
-          alert('Authentication failed: ' + (result.error || 'Unknown error'));
-        }
-      } catch (error) {
-        console.error('Authentication error:', error);
-        alert('Authentication failed: ' + error.message);
-      }
-    }
-
-    // Event listeners
-    document.getElementById('registerBtn').addEventListener('click', register);
-    document.getElementById('authBtn').addEventListener('click', authenticate);
-  </script>
+    </script>
 </body>
 </html>
