@@ -30,7 +30,7 @@ function generateUserID() {
 // Routes
 
 // Generate registration options
-app.post('/generate-registration-options', (req, res) => {
+app.post('/generate-registration-options', async (req, res) => {
   const { username } = req.body;
 
   if (!username) {
@@ -47,7 +47,7 @@ app.post('/generate-registration-options', (req, res) => {
   users[userID.toString('base64')] = user;
 
   try {
-    const registrationOptions = generateRegistrationOptions({
+    const registrationOptions = await generateRegistrationOptions({
     rpName: 'WebAuthn Example',
     rpID: 'mex-node.space',
     userID: user.id, // Pass the binary userID
