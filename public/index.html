@@ -1,162 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passkey Manager</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #f0f0f0;
-            margin: 0;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 48%;
-            padding: 10px;
-            margin: 5px 1%;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        #status {
-            margin-top: 15px;
-            color: #666;
-            word-wrap: break-word;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAuthn Passkey Demo</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #ff7f50, #ff4500);
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      color: #333;
+      font-size: 1rem;
+      outline: none;
+      transition: background 0.3s ease;
+    }
+
+    input:focus {
+      background: rgba(255, 255, 255, 1);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background: #ff4500;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    button:hover {
+      background: #ff7f50;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1rem;
+      animation: slideIn 0.5s ease-in-out;
+    }
+
+    .error {
+      color: #ff4444;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Passkey Manager</h1>
-        <input type="email" id="email" placeholder="Enter your email" required>
-        <button id="registerBtn">Register Passkey</button>
-        <button id="authBtn">Authenticate</button>
-        <div id="status"></div>
-    </div>
+  <div class="container">
+    <h1>WebAuthn Passkey Demo</h1>
+    <input type="email" id="email" placeholder="Enter your email" required>
+    <button id="register">Register</button>
+    <button id="authenticate">Authenticate</button>
+    <div id="message" class="message"></div>
+  </div>
 
-    <script>
-        const emailInput = document.getElementById('email');
-        const registerBtn = document.getElementById('registerBtn');
-        const authBtn = document.getElementById('authBtn');
-        const status = document.getElementById('status');
+  <script>
+    const emailInput = document.getElementById('email');
+    const registerButton = document.getElementById('register');
+    const authenticateButton = document.getElementById('authenticate');
+    const messageDiv = document.getElementById('message');
 
-        // Check if WebAuthn is supported
-        if (!window.PublicKeyCredential) {
-            status.textContent = 'WebAuthn not supported in this browser';
-            status.style.color = 'red';
-            registerBtn.disabled = true;
-            authBtn.disabled = true;
-            return;
-        }
+    const serverUrl = 'https://mex-node.space';
 
-        // Validate email input
-        function validateEmail() {
-            const email = emailInput.value.trim();
-            if (!email || !email.includes('@')) {
-                status.textContent = 'Please enter a valid email';
-                status.style.color = 'red';
-                return null;
-            }
-            return email;
-        }
+    // Helper function to display messages
+    function displayMessage(message, isError = false) {
+      messageDiv.textContent = message;
+      messageDiv.className = isError ? 'message error' : 'message';
+    }
 
-        // Register Passkey
-        registerBtn.addEventListener('click', async () => {
-            const email = validateEmail();
-            if (!email) return;
+    // Register a new passkey
+    registerButton.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email) {
+        displayMessage('Please enter your email.', true);
+        return;
+      }
 
-            try {
-                status.textContent = 'Registering passkey...';
-                status.style.color = '#666';
+      try {
+        // Step 1: Generate registration options
+        const registrationOptionsResponse = await fetch(`${serverUrl}/generate-registration-options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: email }),
+        });
+        const registrationOptions = await registrationOptionsResponse.json();
 
-                const optionsResponse = await fetch(`/register-options?email=${encodeURIComponent(email)}`);
-                const options = await optionsResponse.json();
-                if (options.error) throw new Error(options.error);
-
-                const credential = await navigator.credentials.create({ publicKey: options });
-
-                const response = await fetch('/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, response: credential }),
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    status.textContent = 'Passkey registered successfully!';
-                    status.style.color = 'green';
-                } else {
-                    throw new Error(result.error || 'Registration failed');
-                }
-            } catch (error) {
-                status.textContent = `Error: ${error.message}`;
-                status.style.color = 'red';
-            }
+        // Step 2: Use the browser's WebAuthn API to create a credential
+        const credential = await navigator.credentials.create({
+          publicKey: registrationOptions,
         });
 
-        // Authenticate Passkey
-        authBtn.addEventListener('click', async () => {
-            const email = validateEmail();
-            if (!email) return;
-
-            try {
-                status.textContent = 'Authenticating...';
-                status.style.color = '#666';
-
-                const optionsResponse = await fetch(`/auth-options?email=${encodeURIComponent(email)}`);
-                const options = await optionsResponse.json();
-                if (options.error) throw new Error(options.error);
-
-                const credential = await navigator.credentials.get({ publicKey: options });
-
-                const response = await fetch('/authenticate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, response: credential }),
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    status.textContent = 'Authentication successful!';
-                    status.style.color = 'green';
-                } else {
-                    throw new Error(result.error || 'Authentication failed');
-                }
-            } catch (error) {
-                status.textContent = `Error: ${error.message}`;
-                status.style.color = 'red';
-            }
+        // Step 3: Verify the registration response
+        const verificationResponse = await fetch(`${serverUrl}/verify-registration`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...credential,
+            userID: registrationOptions.user.id,
+          }),
         });
-    </script>
+        const verificationResult = await verificationResponse.json();
+
+        if (verificationResult.verified) {
+          displayMessage('🎉 Registration successful!');
+        } else {
+          displayMessage('❌ Registration failed.', true);
+        }
+      } catch (error) {
+        console.error(error);
+        displayMessage('⚠️ An error occurred during registration.', true);
+      }
+    });
+
+    // Authenticate with a passkey
+    authenticateButton.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email) {
+        displayMessage('Please enter your email.', true);
+        return;
+      }
+
+      try {
+        // Step 1: Generate authentication options
+        const authOptionsResponse = await fetch(`${serverUrl}/generate-authentication-options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: email }),
+        });
+        const authOptions = await authOptionsResponse.json();
+
+        // Step 2: Use the browser's WebAuthn API to get an assertion
+        const assertion = await navigator.credentials.get({
+          publicKey: authOptions,
+        });
+
+        // Step 3: Verify the authentication response
+        const verificationResponse = await fetch(`${serverUrl}/verify-authentication`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(assertion),
+        });
+        const verificationResult = await verificationResponse.json();
+
+        if (verificationResult.verified) {
+          displayMessage('🎉 Authentication successful!');
+        } else {
+          displayMessage('❌ Authentication failed.', true);
+        }
+      } catch (error) {
+        console.error(error);
+        displayMessage('⚠️ An error occurred during authentication.', true);
+      }
+    });
+  </script>
 </body>
 </html>
