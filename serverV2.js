@@ -23,6 +23,10 @@ const rpID = 'mex-node.space'; // Relying Party ID (your domain in production)
 const rpName = 'HomeDepot';
 const expectedOrigin = 'https://mex-node.space/'; // Update for production
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'indexV2.html'));
+});
+
 // Registration: Generate options
 app.get('/register-options', (req, res) => {
   const username = req.query.username || 'user@example.com'; // Simulated user
