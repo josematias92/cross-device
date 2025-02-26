@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const path = require('path'); // Add path module
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -25,6 +26,10 @@ const expectedOrigin = 'https://mex-node.space/'; // Adjust based on your fronte
 function generateUserID() {
   return crypto.randomBytes(16); // Returns a Buffer
 }
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Registration: Generate options
 app.post('/register/options', async (req, res) => {
