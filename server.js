@@ -9,9 +9,9 @@ const port = 4000;
 app.use(bodyParser.json());
 
 // Configuration
-const rpId = 'localhost'; // Update to your domain in production
+const rpId = 'mex-node.space'; // Update to your domain in production
 const rpName = 'PasskeyApp';
-const origin = 'http://localhost:3000'; // Update for production
+const origin = 'https://mex-node.space/'; // Update for production
 
 // In-memory storage (replace with database in production)
 const users = new Map(); // { email: { id: Buffer, credentials: [{ id: Buffer, publicKey: Buffer }] } }
@@ -20,6 +20,14 @@ const challenges = new Map(); // { email: Buffer }
 // Base64url encoding/decoding
 const base64urlEncode = (buffer) => Buffer.from(buffer).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 const base64urlDecode = (str) => Buffer.from(str.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+    if (err) {
+      res.status(500).send('Error loading authentication page');
+    }
+  });
+});
 
 // Registration Options
 app.get('/register-options', (req, res) => {
