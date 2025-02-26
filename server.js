@@ -29,8 +29,8 @@ function generateUserID() {
   return crypto.randomBytes(16); // 16-byte Buffer
 }
 
-app.get("/", function(req,res){
-    res.sendFile(__dirname, 'public', "index.html");
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 
