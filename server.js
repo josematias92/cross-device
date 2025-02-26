@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const path = require('path');
+const crypto = require('crypto'); // Add this for Buffer generation
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -13,6 +14,7 @@ const {
 const app = express();
 const port = 4000;
 
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -22,7 +24,7 @@ const users = {};
 
 // Helper function to generate a random buffer for userID
 function generateUserID() {
-  return Buffer.from(crypto.randomBytes(16)).toString('base64url');
+  return crypto.randomBytes(16); // Returns a Buffer
 }
 
 // Routes
@@ -41,7 +43,7 @@ app.post('/generate-registration-options', (req, res) => {
     devices: [],
   };
 
-  users[user.id] = user;
+  users[userID.toString('base64')] = user;
 
   const registrationOptions = generateRegistrationOptions({
     rpName: 'WebAuthn Example',
