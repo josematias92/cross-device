@@ -3,106 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HomeDepot Cross Device Experience</title>
+    <title>Passkey Manager</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; background-color: #f5f5f5; min-height: 100vh; display: flex; justify-content: center; align-items: center; color: #333; }
-        .container { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center; border-top: 4px solid #ff6200; }
-        h1 { font-size: 1.5rem; color: #ff6200; margin-bottom: 1.5rem; font-weight: 600; }
-        #message { font-size: 1rem; color: #666; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        #email { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ddd; border-radius: 4px; }
-        #submitEmail { padding: 0.75rem 1.5rem; font-size: 1rem; background-color: #ff6200; border: none; border-radius: 4px; color: white; cursor: pointer; transition: background-color 0.3s; width: 100%; }
-        #submitEmail:hover { background-color: #e55a00; }
-        .auth-button { padding: 0.75rem 1.5rem; font-size: 1rem; background-color: #ff6200; border: none; border-radius: 4px; color: white; cursor: pointer; transition: background-color 0.3s; width: 100%; display: none; }
-        .auth-button:hover { background-color: #e55a00; }
-        .spinner { width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #ff6200; border-radius: 50%; animation: spin 1s linear infinite; margin: 1rem auto; display: none; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @media (max-width: 480px) { 
-            .container { margin: 1rem; padding: 1.5rem; } 
-            h1 { font-size: 1.25rem; } 
-            #message { font-size: 0.9rem; } 
-            #email, #submitEmail, .auth-button { padding: 0.6rem 1rem; font-size: 0.9rem; } 
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f0f0f0;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 48%;
+            padding: 10px;
+            margin: 5px 1%;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #status {
+            margin-top: 15px;
+            color: #666;
+            word-wrap: break-word;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to the HomeDepot Cross Device Experience</h1>
-        <div id="message">Please enter your email to authenticate</div>
-        <div class="form-group" id="emailForm">
-            <input type="email" id="email" placeholder="Enter your email" required>
-            <button id="submitEmail">Submit</button>
-        </div>
-        <button class="auth-button" id="authBtn">Authenticate with Passkey</button>
-        <div class="spinner" id="spinner"></div>
+        <h1>Passkey Manager</h1>
+        <input type="email" id="email" placeholder="Enter your email" required>
+        <button id="registerBtn">Register Passkey</button>
+        <button id="authBtn">Authenticate</button>
+        <div id="status"></div>
     </div>
 
     <script>
-        const messageElement = document.getElementById('message');
-        const emailForm = document.getElementById('emailForm');
         const emailInput = document.getElementById('email');
-        const submitEmailButton = document.getElementById('submitEmail');
-        const authButton = document.getElementById('authBtn');
-        const spinner = document.getElementById('spinner');
+        const registerBtn = document.getElementById('registerBtn');
+        const authBtn = document.getElementById('authBtn');
+        const status = document.getElementById('status');
 
-        let username = '';
+        // Check if WebAuthn is supported
+        if (!window.PublicKeyCredential) {
+            status.textContent = 'WebAuthn not supported in this browser';
+            status.style.color = 'red';
+            registerBtn.disabled = true;
+            authBtn.disabled = true;
+            return;
+        }
 
-        // Handle email submission
-        submitEmailButton.addEventListener('click', async () => {
+        // Validate email input
+        function validateEmail() {
             const email = emailInput.value.trim();
             if (!email || !email.includes('@')) {
-                messageElement.textContent = 'Please enter a valid email address';
-                messageElement.style.color = '#d32f2f';
-                return;
+                status.textContent = 'Please enter a valid email';
+                status.style.color = 'red';
+                return null;
             }
+            return email;
+        }
 
-            username = email;
-            emailForm.style.display = 'none';
-            messageElement.textContent = 'Authenticating...';
-            messageElement.style.color = '#666';
-            await startWebAuthn(); // Start authentication immediately
-        });
+        // Register Passkey
+        registerBtn.addEventListener('click', async () => {
+            const email = validateEmail();
+            if (!email) return;
 
-        async function startWebAuthn() {
             try {
-                spinner.style.display = 'block';
-                authButton.style.display = 'none';
+                status.textContent = 'Registering passkey...';
+                status.style.color = '#666';
 
-                const optionsResponse = await fetch(`/auth-options?username=${encodeURIComponent(username)}`);
+                const optionsResponse = await fetch(`/register-options?email=${encodeURIComponent(email)}`);
                 const options = await optionsResponse.json();
+                if (options.error) throw new Error(options.error);
 
-                if (options.error) {
-                    throw new Error(options.error);
-                }
+                const credential = await navigator.credentials.create({ publicKey: options });
 
-                const credential = await navigator.credentials.get({
-                    publicKey: options,
-                });
-
-                const response = await fetch('/authenticate', {
+                const response = await fetch('/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, response: credential }),
+                    body: JSON.stringify({ email, response: credential }),
                 });
 
                 const result = await response.json();
                 if (result.success) {
-                    messageElement.textContent = 'Passkey Authentication Successful!';
-                    messageElement.style.color = '#ff6200';
+                    status.textContent = 'Passkey registered successfully!';
+                    status.style.color = 'green';
+                } else {
+                    throw new Error(result.error || 'Registration failed');
+                }
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                status.style.color = 'red';
+            }
+        });
+
+        // Authenticate Passkey
+        authBtn.addEventListener('click', async () => {
+            const email = validateEmail();
+            if (!email) return;
+
+            try {
+                status.textContent = 'Authenticating...';
+                status.style.color = '#666';
+
+                const optionsResponse = await fetch(`/auth-options?email=${encodeURIComponent(email)}`);
+                const options = await optionsResponse.json();
+                if (options.error) throw new Error(options.error);
+
+                const credential = await navigator.credentials.get({ publicKey: options });
+
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, response: credential }),
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    status.textContent = 'Authentication successful!';
+                    status.style.color = 'green';
                 } else {
                     throw new Error(result.error || 'Authentication failed');
                 }
             } catch (error) {
-                messageElement.textContent = 'Passkey Authentication Failed: ' + error.message;
-                messageElement.style.color = '#d32f2f';
-                authButton.style.display = 'block';
-            } finally {
-                spinner.style.display = 'none';
+                status.textContent = `Error: ${error.message}`;
+                status.style.color = 'red';
             }
-        }
-
-        authButton.addEventListener('click', startWebAuthn);
+        });
     </script>
 </body>
 </html>
