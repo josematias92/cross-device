@@ -27,6 +27,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'indexV2.html'));
 });
 
+app.get('/auth/biometric-prompt', async (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'registerv3.html'));
+});
+
 // Registration: Generate options
 app.get('/register-options', (req, res) => {
   const username = req.query.username || 'user@example.com'; // Simulated user
