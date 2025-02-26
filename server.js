@@ -15,6 +15,13 @@ const PORT = 4000;
 const users = new Map(); // email -> user data
 const challenges = new Map(); // email -> challenge
 
+setInterval(() => {
+    console.log({
+        users,
+        challenges,
+    })
+}, 30000)
+
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
