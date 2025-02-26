@@ -115,6 +115,59 @@ app.post('/auth/verify-registration', async (req, res) => {
     }
 });
 
+// Authentication Start
+app.post('/auth/start-authentication', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = users.get(email);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const options = await generateAuthenticationOptions({
+        rpID,
+        userVerification: 'preferred',
+        allowCredentials: user.credentials.map(cred => ({
+            id: cred.id,
+            type: 'public-key',
+            transports: ['usb', 'ble', 'nfc', 'internal']
+        }))
+    });
+
+    challenges.set(email, options.challenge);
+    req.session.email = email;
+
+    res.json(options);
+});
+
+// Authentication Verification
+app.post('/auth/verify-authentication', async (req, res) => {
+    const { email, id, rawId, response, type } = req.body;
+    const expectedChallenge = challenges.get(email);
+
+    if (!expectedChallenge || !req.session.email || req.session.email !== email) {
+        return res.status(400).json({ success: false, error: 'Invalid session or challenge' });
+    }
+
+    try {
+        const verification = await verifyAuthenticationResponse({
+            response: { id, rawId, response, type },
+            expectedChallenge,
+            expectedOrigin: origin,
+            expectedRPID: rpID,
+            authenticator: users.get(email).credentials.find(cred => cred.id === rawId)
+        });
+
+        if (verification.verified) {
+            challenges.delete(email);
+            res.json({ success: true });
+        } else {
+            res.status(400).json({ success: false, error: 'Authentication failed' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.get('/auth/biometric-prompt', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'registerv2.html'));
 });
