@@ -1,21 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
-const path = require('path');
 
 const app = express();
 const port = 4000;
 
 // Middleware
 app.use(bodyParser.json());
-app.use(express.static('public')); // Serve files from 'public' directory
 
 // Configuration
-const rpId = 'mex-node.space'; // Relying Party ID (your domain in production)
-const rpName = 'PasskeyDemo';
-const origin = 'https://mex-node.space/'; // Update for production
+const rpId = 'localhost'; // Update to your domain in production
+const rpName = 'PasskeyApp';
+const origin = 'http://localhost:3000'; // Update for production
 
-// In-memory storage (use a database in production)
+// In-memory storage (replace with database in production)
 const users = new Map(); // { email: { id: Buffer, credentials: [{ id: Buffer, publicKey: Buffer }] } }
 const challenges = new Map(); // { email: Buffer }
 
@@ -23,17 +21,8 @@ const challenges = new Map(); // { email: Buffer }
 const base64urlEncode = (buffer) => Buffer.from(buffer).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 const base64urlDecode = (str) => Buffer.from(str.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
 
-// Serve index.html at root path (simplified)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'registration.html'), (err) => {
-    if (err) {
-      res.status(500).send('Error loading authentication page');
-    }
-  });
-});
-
-// Registration: Generate options
-app.get('/api/register-options', (req, res) => {
+// Registration Options
+app.get('/register-options', (req, res) => {
   const email = req.query.email;
   if (!email || !email.includes('@')) {
     return res.status(400).json({ error: 'Valid email required' });
@@ -56,9 +45,7 @@ app.get('/api/register-options', (req, res) => {
       name: email,
       displayName: email.split('@')[0],
     },
-    pubKeyCredParams: [
-      { type: 'public-key', alg: -7 }, // ES256
-    ],
+    pubKeyCredParams: [{ type: 'public-key', alg: -7 }], // ES256
     timeout: 60000,
     authenticatorSelection: {
       authenticatorAttachment: 'platform',
@@ -71,8 +58,8 @@ app.get('/api/register-options', (req, res) => {
   res.json(options);
 });
 
-// Registration: Verify and store passkey
-app.post('/api/register', (req, res) => {
+// Register Passkey
+app.post('/register', (req, res) => {
   const { email, response } = req.body;
   const user = users.get(email);
   const expectedChallenge = challenges.get(email);
@@ -97,19 +84,19 @@ app.post('/api/register', (req, res) => {
     user.credentials.push({ id: credentialId, publicKey });
 
     challenges.delete(email);
-    res.json({ success: true, message: 'Passkey registered successfully' });
+    res.json({ success: true });
   } catch (error) {
-    res.status(400).json({ error: 'Registration failed: ' + error.message });
+    res.status(400).json({ error: 'Registration failed' });
   }
 });
 
-// Authentication: Generate options
-app.get('/api/auth-options', (req, res) => {
+// Authentication Options
+app.get('/auth-options', (req, res) => {
   const email = req.query.email;
   const user = users.get(email);
 
   if (!email || !user || user.credentials.length === 0) {
-    return res.status(400).json({ error: 'User not found or no passkeys registered' });
+    return res.status(400).json({ error: 'User not found or no passkeys' });
   }
 
   const challenge = crypto.randomBytes(32);
@@ -130,8 +117,8 @@ app.get('/api/auth-options', (req, res) => {
   res.json(options);
 });
 
-// Authentication: Verify
-app.post('/api/authenticate', (req, res) => {
+// Authenticate Passkey
+app.post('/authenticate', (req, res) => {
   const { email, response } = req.body;
   const user = users.get(email);
   const expectedChallenge = challenges.get(email);
@@ -154,13 +141,13 @@ app.post('/api/authenticate', (req, res) => {
     const credentialId = base64urlDecode(response.id);
     const credential = user.credentials.find(cred => cred.id.equals(credentialId));
     if (!credential) {
-      return res.status(400).json({ error: 'Credential not recognized' });
+      return res.status(400).json({ error: 'Credential not found' });
     }
 
     challenges.delete(email);
-    res.json({ success: true, message: 'Authentication successful' });
+    res.json({ success: true });
   } catch (error) {
-    res.status(400).json({ error: 'Authentication failed: ' + error.message });
+    res.status(400).json({ error: 'Authentication failed' });
   }
 });
 
