@@ -120,6 +120,28 @@
   </div>
 
   <script>
+
+    // Helper function to convert base64 to ArrayBuffer
+    function base64ToArrayBuffer(base64) {
+      const binaryString = window.atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    // Helper function to convert ArrayBuffer to base64
+    function arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    }
+    
     const emailInput = document.getElementById('email');
     const registerButton = document.getElementById('register');
     const authenticateButton = document.getElementById('authenticate');
@@ -149,6 +171,11 @@
           body: JSON.stringify({ username: email }),
         });
         const registrationOptions = await registrationOptionsResponse.json();
+
+        registrationOptions.challenge = base64ToArrayBuffer(registrationOptions.challenge);
+        registrationOptions.user.id = base64ToArrayBuffer(registrationOptions.userID);
+
+        console.log('Adjusted Registration Options:', registrationOptions);
 
         // Step 2: Use the browser's WebAuthn API to create a credential
         const credential = await navigator.credentials.create({
