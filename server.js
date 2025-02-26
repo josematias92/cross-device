@@ -10,77 +10,157 @@ const {
 const app = express();
 const port = 4000;
 
+// Middleware
 app.use(express.json());
 
-const users = {};
-const rpID = 'localhost';
-const rpName = 'Simple Passkey App';
-const expectedOrigin = 'http://localhost:4000';
+// In-memory storage (replace with a database in production)
+const users = {}; // { username: { id: Buffer, devices: [] } }
 
+// Relying Party (RP) configuration
+const rpID = 'localhost'; // Use your domain in production
+const rpName = 'Passkey Backend';
+const expectedOrigin = 'http://localhost:4000'; // Adjust based on your frontend origin
+
+// Generate a random user ID
 function generateUserID() {
-  return crypto.randomBytes(16);
+  return crypto.randomBytes(16); // Returns a Buffer
 }
 
-app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>Passkey Demo</title>
-    </head>
-    <body>
-      <h1>Passkey Registration & Authentication</h1>
-      <input id="username" type="text" placeholder="Enter username" />
-      <button id="registerBtn">Register Passkey</button>
-      <button id="authBtn">Authenticate</button>
-      <div id="status"></div>
-      <script>
-        function base64urlToArrayBuffer(base64url) {
-          let str = base64url.replace(/-/g, '+').replace(/_/g, '/');
-          const padding = str.length % 4;
-          if (padding) str += '='.repeat(4 - padding);
-          const binary = atob(str);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-          return bytes.buffer;
-        }
+// Registration: Generate options
+app.post('/register/options', async (req, res) => {
+  const { username } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required' });
+  }
+  if (users[username]) {
+    return res.status(400).json({ error: 'Username already exists' });
+  }
 
-        function arrayBufferToBase64url(buffer) {
-          const bytes = new Uint8Array(buffer);
-          let binary = '';
-          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-          return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        }
+  const userID = generateUserID();
+  users[username] = { id: userID, username, devices: [] };
 
-        async function register() {
-          const username = document.getElementById('username').value;
-          if (!username) return updateStatus('Please enter a username');
-          // ... (rest of the original register function)
-        }
+  try {
+    const options = await generateRegistrationOptions({
+      rpName,
+      rpID,
+      userID,
+      userName: username,
+      attestationType: 'none',
+      authenticatorSelection: { userVerification: 'preferred' },
+    });
 
-        async function authenticate() {
-          const username = document.getElementById('username').value;
-          if (!username) return updateStatus('Please enter a username');
-          // ... (rest of the original authenticate function)
-        }
-
-        function updateStatus(message, color = 'black') {
-          const status = document.getElementById('status');
-          status.textContent = message;
-          status.style.color = color;
-        }
-
-        document.getElementById('registerBtn').addEventListener('click', register);
-        document.getElementById('authBtn').addEventListener('click', authenticate);
-      </script>
-    </body>
-    </html>
-  `);
+    users[username].currentChallenge = options.challenge;
+    res.json(options);
+  } catch (error) {
+    console.error('Error generating registration options:', error);
+    res.status(500).json({ error: 'Failed to generate registration options' });
+  }
 });
 
-// ... (rest of the original endpoints unchanged)
+// Registration: Verify response
+app.post('/register/verify', async (req, res) => {
+  const { username, credential } = req.body;
+  if (!username || !credential) {
+    return res.status(400).json({ error: 'Username and credential are required' });
+  }
 
+  const user = users[username];
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  try {
+    const verification = await verifyRegistrationResponse({
+      response: credential,
+      expectedChallenge: user.currentChallenge,
+      expectedOrigin,
+      expectedRPID: rpID,
+    });
+
+    if (verification.verified) {
+      user.devices.push(verification.registrationInfo);
+      delete user.currentChallenge;
+      res.json({ verified: true });
+    } else {
+      res.status(400).json({ error: 'Verification failed' });
+    }
+  } catch (error) {
+    console.error('Error verifying registration:', error);
+    res.status(500).json({ error: 'Verification error' });
+  }
+});
+
+// Authentication: Generate options
+app.post('/auth/options', async (req, res) => {
+  const { username } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required' });
+  }
+
+  const user = users[username];
+  if (!user || !user.devices.length) {
+    return res.status(404).json({ error: 'User or passkey not found' });
+  }
+
+  try {
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: user.devices.map(device => ({
+        id: device.credentialID,
+        type: 'public-key',
+      })),
+      userVerification: 'preferred',
+    });
+
+    user.currentChallenge = options.challenge;
+    res.json(options);
+  } catch (error) {
+    console.error('Error generating authentication options:', error);
+    res.status(500).json({ error: 'Failed to generate authentication options' });
+  }
+});
+
+// Authentication: Verify response
+app.post('/auth/verify', async (req, res) => {
+  const { username, credential } = req.body;
+  if (!username || !credential) {
+    return res.status(400).json({ error: 'Username and credential are required' });
+  }
+
+  const user = users[username];
+  if (!user || !user.devices.length) {
+    return res.status(404).json({ error: 'User or passkey not found' });
+  }
+
+  const authenticator = user.devices.find(device =>
+    device.credentialID.equals(Buffer.from(credential.rawId, 'base64url'))
+  );
+  if (!authenticator) {
+    return res.status(400).json({ error: 'Passkey not recognized' });
+  }
+
+  try {
+    const verification = await verifyAuthenticationResponse({
+      response: credential,
+      expectedChallenge: user.currentChallenge,
+      expectedOrigin,
+      expectedRPID: rpID,
+      authenticator,
+    });
+
+    if (verification.verified) {
+      delete user.currentChallenge;
+      res.json({ verified: true });
+    } else {
+      res.status(400).json({ error: 'Verification failed' });
+    }
+  } catch (error) {
+    console.error('Error verifying authentication:', error);
+    res.status(500).json({ error: 'Verification error' });
+  }
+});
+
+// Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
