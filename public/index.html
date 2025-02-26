@@ -3,196 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passkey Portal</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>HomeDepot Cross Device Experience</title>
     <style>
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; background-color: #f5f5f5; min-height: 100vh; display: flex; justify-content: center; align-items: center; color: #333; }
+        .container { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; text-align: center; border-top: 4px solid #ff6200; }
+        h1 { font-size: 1.5rem; color: #ff6200; margin-bottom: 1.5rem; font-weight: 600; }
+        #message { font-size: 1rem; color: #666; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        #email { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid #ddd; border-radius: 4px; }
+        #submitEmail { padding: 0.75rem 1.5rem; font-size: 1rem; background-color: #ff6200; border: none; border-radius: 4px; color: white; cursor: pointer; transition: background-color 0.3s; width: 100%; }
+        #submitEmail:hover { background-color: #e55a00; }
+        .auth-button { padding: 0.75rem 1.5rem; font-size: 1rem; background-color: #ff6200; border: none; border-radius: 4px; color: white; cursor: pointer; transition: background-color 0.3s; width: 100%; display: none; }
+        .auth-button:hover { background-color: #e55a00; }
+        .spinner { width: 24px; height: 24px; border: 3px solid #ddd; border-top: 3px solid #ff6200; border-radius: 50%; animation: spin 1s linear infinite; margin: 1rem auto; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 480px) { 
+            .container { margin: 1rem; padding: 1.5rem; } 
+            h1 { font-size: 1.25rem; } 
+            #message { font-size: 0.9rem; } 
+            #email, #submitEmail, .auth-button { padding: 0.6rem 1rem; font-size: 0.9rem; } 
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .pulse { animation: pulse 1.5s infinite; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        .bg-gradient { background: linear-gradient(135deg, #6b7280, #1f2937); }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
-    <div class="bg-gradient p-8 rounded-xl shadow-2xl max-w-md w-full">
-        <h1 class="text-3xl font-bold text-center mb-6 text-indigo-300">Home Depot's Portal</h1>
-        
-        <!-- Status Message -->
-        <div id="status" class="text-center mb-6 p-4 rounded-lg bg-gray-800 fade-in bg-red-600 hidden">Error: Failed to fetch registration options</div>
-
-        <!-- Email Input -->
-        <div class="mb-4">
-            <label for="email" class="block text-sm font-medium text-gray-300">Email</label>
-            <input type="email" id="email" class="w-full p-2 mt-1 bg-gray-700 rounded-lg text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your email" required>
+<body>
+    <div class="container">
+        <h1>Welcome to the HomeDepot Cross Device Experience</h1>
+        <div id="message">Please enter your email to authenticate</div>
+        <div class="form-group" id="emailForm">
+            <input type="email" id="email" placeholder="Enter your email" required>
+            <button id="submitEmail">Submit</button>
         </div>
-
-        <!-- Buttons -->
-        <div class="space-y-4">
-            <button id="registerButton" class="w-full py-3 px-6 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-lg font-semibold transition-all duration-300 pulse">
-                Register Passkey
-            </button>
-            <button id="authButton" class="w-full py-3 px-6 bg-teal-600 hover:bg-teal-700 rounded-lg text-lg font-semibold transition-all duration-300 pulse">
-                Authenticate
-            </button>
-        </div>
-
-        <!-- Biometric QR Code Section -->
-        <div class="mt-6 text-center">
-            <p class="text-sm font-medium text-indigo-300 mb-2">Scan for Biometric THD Registration</p>
-            <img id="biometricQrCode" class="mx-auto w-40 h-40 p-2 bg-white rounded-lg shadow-md" alt="QR Code for Biometric THD Registration">
-        </div>
-
-        <!-- Loading Spinner -->
-        <div id="spinner" class="mt-6 flex justify-center hidden">
-            <svg class="animate-spin h-8 w-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"></path>
-            </svg>
-        </div>
+        <button class="auth-button" id="authBtn">Authenticate with Passkey</button>
+        <div class="spinner" id="spinner"></div>
     </div>
 
-    
-    <script src=" https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.1.0/dist/bundle/index.umd.min.js "></script>
     <script>
-        // --- Utility Functions ---
-        function base64UrlToBase64(base64url) {
-            return base64url.replace(/-/g, '+').replace(/_/g, '/');
-        }
-
-        function base64ToArrayBuffer(base64) {
-            try {
-                const standardBase64 = base64UrlToBase64(base64);
-                const paddedBase64 = standardBase64.padEnd(standardBase64.length + (4 - standardBase64.length % 4) % 4, '=');
-                const binaryString = window.atob(paddedBase64);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                return bytes.buffer;
-            } catch (error) {
-                console.error('Base64 decoding error:', error, 'Input:', base64);
-                throw new Error('Invalid base64 string received from server');
-            }
-        }
-
-        function arrayBufferToBase64(buffer) {
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            const base64 = window.btoa(binary);
-            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        }
-
-        // --- UI Helpers ---
-        const statusDiv = document.getElementById('status');
-        const spinner = document.getElementById('spinner');
+        const messageElement = document.getElementById('message');
+        const emailForm = document.getElementById('emailForm');
         const emailInput = document.getElementById('email');
-        const biometricQrCodeImg = document.getElementById('biometricQrCode');
-        
-        function showStatus(message, isError = false) {
-            statusDiv.textContent = message;
-            statusDiv.classList.remove('hidden', 'bg-green-600', 'bg-red-600');
-            statusDiv.classList.add(isError ? 'bg-red-600' : 'bg-green-600', 'fade-in');
-            setTimeout(() => statusDiv.classList.add('hidden'), 3000);
-        }
+        const submitEmailButton = document.getElementById('submitEmail');
+        const authButton = document.getElementById('authBtn');
+        const spinner = document.getElementById('spinner');
 
-        function toggleSpinner(show) {
-            spinner.classList.toggle('hidden', !show);
-        }
+        let username = '';
 
-        function getEmail() {
+        // Handle email submission
+        submitEmailButton.addEventListener('click', async () => {
             const email = emailInput.value.trim();
-            if (!email) throw new Error('Please enter an email');
-            return email;
-        }
-
-        // --- Generate Biometric QR Code ---
-        async function generateBiometricQRCode() {
-            try {
-                const biometricUrl = `${window.location.origin}/auth/biometric-prompt`;
-                const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(biometricUrl)}`;
-                biometricQrCodeImg.src = qrCodeUrl;
-            } catch (error) {
-                showStatus('Error generating QR code: ' + error.message, true);
+            if (!email || !email.includes('@')) {
+                messageElement.textContent = 'Please enter a valid email address';
+                messageElement.style.color = '#d32f2f';
+                return;
             }
-        }
 
-        // --- Registration ---
-        async function startRegistration() {
+            username = email;
+            emailForm.style.display = 'none';
+            messageElement.textContent = 'Authenticating...';
+            messageElement.style.color = '#666';
+            await startWebAuthn(); // Start authentication immediately
+        });
+
+        async function startWebAuthn() {
             try {
-                const email = getEmail();
-                toggleSpinner(true);
+                spinner.style.display = 'block';
+                authButton.style.display = 'none';
 
-                const response = await fetch('/auth/start-registration', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ email }),
-                });
+                const optionsResponse = await fetch(`/auth-options?username=${encodeURIComponent(username)}`);
+                const options = await optionsResponse.json();
 
-                if (!response.ok) throw new Error('Failed to fetch registration options');
-
-                const regOptions = await response.json();
-                regOptions.challenge = base64ToArrayBuffer(regOptions.challenge);
-                regOptions.user.id = base64ToArrayBuffer(regOptions.user.id);
-                if (regOptions.excludeCredentials) {
-                    regOptions.excludeCredentials = regOptions.excludeCredentials.map(cred => ({
-                        ...cred,
-                        id: base64ToArrayBuffer(cred.id),
-                    }));
+                if (options.error) {
+                    throw new Error(options.error);
                 }
 
-                const credential = await navigator.credentials.create({ publicKey: regOptions });
-
-                const regResponse = {
-                    id: credential.id,
-                    rawId: arrayBufferToBase64(credential.rawId),
-                    response: {
-                        attestationObject: arrayBufferToBase64(credential.response.attestationObject),
-                        clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
-                    },
-                    type: credential.type,
-                };
-
-                const verificationResponse = await fetch('/auth/verify-registration', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ ...regResponse, email }),
+                const credential = await navigator.credentials.get({
+                    publicKey: options,
                 });
 
-                const result = await verificationResponse.json();
-                toggleSpinner(false);
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, response: credential }),
+                });
 
+                const result = await response.json();
                 if (result.success) {
-                    showStatus('Passkey registered successfully!');
+                    messageElement.textContent = 'Passkey Authentication Successful!';
+                    messageElement.style.color = '#ff6200';
                 } else {
-                    throw new Error('Registration failed');
+                    throw new Error(result.error || 'Authentication failed');
                 }
             } catch (error) {
-                toggleSpinner(false);
-                showStatus('Error: ' + error.message, true);
+                messageElement.textContent = 'Passkey Authentication Failed: ' + error.message;
+                messageElement.style.color = '#d32f2f';
+                authButton.style.display = 'block';
+            } finally {
+                spinner.style.display = 'none';
             }
         }
 
-        // --- Authentication ---
-          
-
-        // --- Event Listeners and Initialization ---
-        document.getElementById('registerButton').addEventListener('click', startRegistration);
-        //document.getElementById('authButton').addEventListener('click', startAuthenticationv2);
-        window.addEventListener('load', generateBiometricQRCode);
+        authButton.addEventListener('click', startWebAuthn);
     </script>
 </body>
 </html>
