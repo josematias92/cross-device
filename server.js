@@ -96,37 +96,51 @@ app.post('/register/verify', async (req, res) => {
 });
 
 // Authentication: Generate options
+// Authentication: Generate options
 app.post('/auth/options', async (req, res) => {
-  const { username } = req.body;
-  if (!username) {
-    return res.status(400).json({ error: 'Username is required' });
-  }
-
-  const user = users[username];
-  if (!user || !user.devices.length) {
-    return res.status(404).json({ error: 'User or passkey not found' });
-  }
-
-  console.log({user: user}, "inside auth options");
-  console.log(user.devices, "inside auth options user.devices");
-
-  try {
-
-    const options = await generateAuthenticationOptions({
-      rpID,
-      allowCredentials: user.devices.map(device => ({
-        id: device.credentialID,
-        type: 'public-key',
-      })),
-      userVerification: 'preferred',
-    });
-
-    user.currentChallenge = options.challenge;
-    res.json(options);
-  } catch (error) {
-    console.error('Error generating authentication options:', error);
-    res.status(500).json({ error: 'Failed to generate authentication options' });
-  }
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+  
+    const user = users[username];
+    if (!user || !user.devices.length) {
+      return res.status(404).json({ error: 'User or passkey not found' });
+    }
+  
+    try {
+      // Enhanced error logging to help diagnose the issue
+      console.log(`Generating auth options for user ${username}`);
+      console.log(`User has ${user.devices.length} registered device(s)`);
+      
+      const allowCredentials = user.devices.map(device => {
+        // Ensure credential ID is properly formatted
+        const credentialID = device.credentialID;
+        console.log(`Credential ID type: ${typeof credentialID}, isBuffer: ${Buffer.isBuffer(credentialID)}`);
+        
+        return {
+          id: credentialID,
+          type: 'public-key',
+          // Adding these optional fields may help with some authenticators
+          transports: ['internal', 'usb', 'ble', 'nfc'],
+        };
+      });
+      
+      const options = await generateAuthenticationOptions({
+        rpID,
+        allowCredentials,
+        userVerification: 'preferred',
+        timeout: 60000, // Increase timeout to 1 minute
+      });
+  
+      user.currentChallenge = options.challenge;
+      res.json(options);
+    } catch (error) {
+      // More detailed error logging
+      console.error('Error generating authentication options:', error);
+      console.error('Error details:', error.message);
+      res.status(500).json({ error: 'Failed to generate authentication options' });
+    }
 });
 
 // Authentication: Verify response
@@ -167,6 +181,10 @@ app.post('/auth/verify', async (req, res) => {
     console.error('Error verifying authentication:', error);
     res.status(500).json({ error: 'Verification error' });
   }
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, "public" ,'index.html'));
 });
 
 // Start the server
