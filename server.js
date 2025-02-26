@@ -40,7 +40,7 @@ const origin = `https://mex-node.space`;
 
 // Serve HTML at root endpoint
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'registerv3.html'));
+    res.sendFile(path.join(__dirname, 'public', 'indexV2.html'));
 });
 
 // Registration Start
