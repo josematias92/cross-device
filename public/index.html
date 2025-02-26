@@ -8,8 +8,11 @@
   <button id="registerBtn">Register</button>
   <button id="authBtn">Authenticate</button>
   <script type="module">
+    import simplewebauthnbrowser from 'https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.1.0/+esm'
+  </script>
+  <script type="module">
     // Optional: Use @simplewebauthn/browser (uncomment if installed)
-    import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+    import { startRegistration, startAuthentication } from 'simplewebauthnbrowser';
 
     // Base64url to ArrayBuffer
     function base64urlToArrayBuffer(base64url) {
