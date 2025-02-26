@@ -173,7 +173,7 @@
         const registrationOptions = await registrationOptionsResponse.json();
 
         registrationOptions.challenge = base64ToArrayBuffer(registrationOptions.challenge);
-        registrationOptions.user.id = base64ToArrayBuffer(registrationOptions.userID);
+        registrationOptions.user.id = base64ToArrayBuffer(registrationOptions.user.id);
 
         console.log('Adjusted Registration Options:', registrationOptions);
 
