@@ -25,7 +25,7 @@ const base64urlDecode = (str) => Buffer.from(str.replace(/-/g, '+').replace(/_/g
 
 // Serve index.html at root path (simplified)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+  res.sendFile(path.join(__dirname, 'public', 'registration.html'), (err) => {
     if (err) {
       res.status(500).send('Error loading authentication page');
     }
