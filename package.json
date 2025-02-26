@@ -1,7 +1,7 @@
 {
   "name": "webauthnserver",
   "version": "1.0.0",
-  "main": "serverV2.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
