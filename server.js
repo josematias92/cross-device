@@ -271,6 +271,7 @@ app.post('/auth/options', async (req, res) => {
 
 
 // Authentication: Verify response
+// Authentication: Verify response
 app.post('/auth/verify', async (req, res) => {
     const { username, credential } = req.body;
     if (!username || !credential) {
@@ -283,64 +284,68 @@ app.post('/auth/verify', async (req, res) => {
     }
   
     try {
-      // Log incoming credential and challenge for debugging
-      console.log('Authentication credential:', {
-        id: credential.id,
-        rawId: credential.rawId,
-        responseKeys: Object.keys(credential.response || {})
-      });
-      console.log('Expected challenge:', user.currentChallenge);
+      // Log RAW incoming credential for deeper analysis
+      console.log('Full authentication credential:', JSON.stringify(credential, null, 2));
+      console.log('Current challenge:', user.currentChallenge);
   
-      // Find the matching authenticator
-      const authenticator = user.devices.find(device => 
-        device.credentialID && 
-        device.credentialID.equals(Buffer.from(credential.rawId, 'base64url'))
-      );
+      // Find the matching authenticator with exact matching
+      const authenticator = user.devices.find(device => {
+        const deviceIdBase64 = device.credentialID.toString('base64url');
+        const matches = deviceIdBase64 === credential.id;
+        console.log(`Comparing: ${deviceIdBase64} with ${credential.id}, matches: ${matches}`);
+        return matches;
+      });
       
       if (!authenticator) {
         console.log('No matching authenticator found');
-        console.log('Incoming rawId:', credential.rawId);
-        console.log('Available credentials:', user.devices.map(d => d.credentialID.toString('base64url')));
+        console.log('Incoming credential.id:', credential.id);
+        console.log('Available devices:', user.devices.map(d => ({
+          id: d.credentialID.toString('base64url'),
+          originalId: d.originalId 
+        })));
         return res.status(400).json({ error: 'Passkey not recognized' });
       }
-      
-      // Ensure counter is properly initialized as a number
-      if (typeof authenticator.counter !== 'number') {
-        console.log('Counter was not a number, setting to 0');
-        authenticator.counter = 0;
+  
+      // Check if we have a public key (crucial for verification)
+      if (!authenticator.credentialPublicKey || !Buffer.isBuffer(authenticator.credentialPublicKey)) {
+        console.log('Missing or invalid credentialPublicKey');
+        return res.status(500).json({ error: 'Invalid authenticator data: missing public key' });
       }
       
-      // Create a clean authenticator object with ONLY the required properties
-      const authenticatorClone = {
+      // Create an authenticator clone with only the properties expected by the library
+      // This is crucial to avoid any extraneous properties that might confuse the library
+      const authForVerification = {
         credentialID: authenticator.credentialID,
         credentialPublicKey: authenticator.credentialPublicKey,
-        counter: authenticator.counter,
-        transports: authenticator.transports || ['internal']
+        counter: 0  // Explicitly initialize counter as 0
       };
       
-      // Log the exact authenticator we're using
-      console.log('Using authenticator with properties:', {
-        credentialID: authenticatorClone.credentialID ? authenticatorClone.credentialID.length + ' bytes' : 'missing',
-        credentialPublicKey: authenticatorClone.credentialPublicKey ? authenticatorClone.credentialPublicKey.length + ' bytes' : 'missing',
-        counter: authenticatorClone.counter,
-        transports: authenticatorClone.transports
-      });
-
-      // Perform the verification
+      // Add transports only if they exist
+      if (authenticator.transports && Array.isArray(authenticator.transports)) {
+        authForVerification.transports = authenticator.transports;
+      }
+      
+      // Log the verification parameters
+      console.log('Verification parameters:');
+      console.log('- Challenge length:', user.currentChallenge ? user.currentChallenge.length : 'missing');
+      console.log('- Public key exists:', !!authForVerification.credentialPublicKey);
+      console.log('- Counter value:', authForVerification.counter);
+  
       const verification = await verifyAuthenticationResponse({
         response: credential,
         expectedChallenge: user.currentChallenge,
         expectedOrigin,
         expectedRPID: rpID,
-        authenticator: authenticatorClone,
-        requireUserVerification: false // Add this to see if it helps
+        authenticator: authForVerification,
+        requireUserVerification: false  // Make this optional for testing
       });
   
       if (verification.verified) {
-        // Update the counter for future authentications
-        if (verification.authenticationInfo && verification.authenticationInfo.newCounter !== undefined) {
-          authenticator.counter = verification.authenticationInfo.newCounter;
-        }
+        // Update the stored authenticator counter
+        console.log('Authentication successful!');
+        console.log('New counter value:', verification.authenticationInfo.newCounter);
+        
+        authenticator.counter = verification.authenticationInfo.newCounter || 0;
         delete user.currentChallenge;
         res.json({ verified: true });
       } else {
@@ -348,20 +353,14 @@ app.post('/auth/verify', async (req, res) => {
       }
     } catch (error) {
       console.error('Error verifying authentication:', error);
+      console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
       
-      // Provide more specific guidance based on the error
-      if (error.message.includes('counter')) {
-        res.status(500).json({ 
-          error: 'Verification error: Counter issue. Try re-registering the passkey.',
-          details: error.message
-        });
-      } else {
-        res.status(500).json({ 
-          error: 'Verification error: ' + error.message,
-          details: 'Please check server logs for more information.'
-        });
-      }
+      // Send a clearer error message to the client
+      res.status(500).json({ 
+        error: 'Authentication error: ' + error.message,
+        suggestion: 'Please try registering a new passkey'
+      });
     }
 });
 
