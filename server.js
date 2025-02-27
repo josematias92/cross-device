@@ -174,19 +174,23 @@ app.post('/auth/options', async (req, res) => {
       
       const allowCredentials = user.devices.map(device => {
         // Improved logging
-      console.log('Device:', device);
-      console.log(`Credential ID exists: ${!!device.credentialID}`);
+        console.log('Device:', device);
+        console.log(`Credential ID exists: ${!!device.credentialID}`);
 
-      if (!device.credentialID) {
-        throw new Error('Missing credentialID in stored device');
-      }
+        if (!device.credentialID) {
+          throw new Error('Missing credentialID in stored device');
+        }
 
-      return {
-        id: device.credentialID,
-        type: 'public-key',
-        transports: device.transports || ['internal', 'usb', 'ble', 'nfc'],
-      };
-    });
+        // Convert Buffer to base64url string format which is what the library expects
+        const credentialIDBase64 = device.credentialID.toString('base64url');
+        console.log('Credential ID as base64url:', credentialIDBase64);
+        
+        return {
+          id: credentialIDBase64, // Use base64url string instead of raw Buffer
+          type: 'public-key',
+          transports: device.transports || ['internal', 'usb', 'ble', 'nfc'],
+        };
+      });
       
       const options = await generateAuthenticationOptions({
         rpID,
