@@ -182,7 +182,8 @@ app.post('/auth/options', async (req, res) => {
         }
 
         // Convert Buffer to base64url string format which is what the library expects
-        const credentialIDBase64 = device.credentialID.toString('base64url');
+        //const credentialIDBase64 = device.credentialID.toString('base64url');
+        const credentialIDBase64 = Buffer.from(device.credentialID).toString('base64url');
         console.log('Credential ID as base64url:', credentialIDBase64);
         
         return {
