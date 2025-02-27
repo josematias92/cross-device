@@ -270,7 +270,6 @@ app.post('/auth/options', async (req, res) => {
 });
 
 // Authentication: Verify response
-// Authentication: Verify response
 app.post('/auth/verify', async (req, res) => {
   const { username, credential } = req.body;
   if (!username || !credential) {
@@ -289,14 +288,6 @@ app.post('/auth/verify', async (req, res) => {
       rawId: credential.rawId
     });
 
-    // Enhanced logging of stored devices
-    console.log('User devices:', user.devices.map(d => ({
-      credentialIDBase64url: d.credentialID.toString('base64url'),
-      hasCounter: d.counter !== undefined,
-      counterValue: d.counter,
-      hasPublicKey: !!d.credentialPublicKey
-    })));
-
     // Find the matching authenticator
     const authenticator = user.devices.find(device =>
       device.credentialID.equals(Buffer.from(credential.rawId, 'base64url'))
@@ -309,26 +300,28 @@ app.post('/auth/verify', async (req, res) => {
       return res.status(400).json({ error: 'Passkey not recognized' });
     }
 
-    // Ensure authenticator has all required properties
-    console.log('Found authenticator:', {
-      hasCredentialID: !!authenticator.credentialID,
-      hasPublicKey: !!authenticator.credentialPublicKey,
-      hasCounter: authenticator.counter !== undefined,
-      counterValue: authenticator.counter
-    });
+    // Prepare authenticator in the exact format expected by the library
+    const verificationAuthenticator = {
+      credentialID: authenticator.credentialID,
+      credentialPublicKey: authenticator.credentialPublicKey,
+      counter: authenticator.counter || 0,
+      transports: authenticator.transports || ['internal']
+    };
     
-    // Ensure counter property exists (default to 0 if undefined)
-    if (authenticator.counter === undefined) {
-      console.log('Adding missing counter property');
-      authenticator.counter = 0;
-    }
+    // Log the exact authenticator object we're passing to the library
+    console.log('Verification authenticator:', {
+      credentialIDExists: !!verificationAuthenticator.credentialID,
+      credentialPublicKeyExists: !!verificationAuthenticator.credentialPublicKey,
+      counter: verificationAuthenticator.counter,
+      transports: verificationAuthenticator.transports
+    });
 
     const verification = await verifyAuthenticationResponse({
       response: credential,
       expectedChallenge: user.currentChallenge,
       expectedOrigin,
       expectedRPID: rpID,
-      authenticator,
+      authenticator: verificationAuthenticator,
     });
 
     if (verification.verified) {
@@ -347,6 +340,7 @@ app.post('/auth/verify', async (req, res) => {
     res.status(500).json({ error: 'Verification error: ' + error.message });
   }
 });
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'index.html'));
