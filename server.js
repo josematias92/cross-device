@@ -64,48 +64,52 @@ app.post('/register/options', async (req, res) => {
 
 // Registration: Verify response
 app.post('/register/verify', async (req, res) => {
-  const { username, credential } = req.body;
-  if (!username || !credential) {
-    return res.status(400).json({ error: 'Username and credential are required' });
-  }
-
-  const user = users[username];
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
-  }
-
-  try {
-    const verification = await verifyRegistrationResponse({
-      response: credential,
-      expectedChallenge: user.currentChallenge,
-      expectedOrigin,
-      expectedRPID: rpID,
-    });
-
-    if (verification.verified) {
-        // Log the registration info to inspect its structure
-        console.log('Registration info:', verification.registrationInfo);
+    const { username, credential } = req.body;
+    if (!username || !credential) {
+      return res.status(400).json({ error: 'Username and credential are required' });
+    }
+  
+    const user = users[username];
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+  
+    try {
+      const verification = await verifyRegistrationResponse({
+        response: credential,
+        expectedChallenge: user.currentChallenge,
+        expectedOrigin,
+        expectedRPID: rpID,
+      });
+  
+      if (verification.verified) {
+        // Log the complete registration info
+        console.log('Full registration info:', JSON.stringify(verification.registrationInfo, null, 2));
         
-        // Store credential information in the proper format
+        // Store credential with proper Buffer conversion for binary data
         const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
         
-        // Make sure we're storing the credential properly
+        // Make sure all data is properly stored
         user.devices.push({
-          credentialID,
-          credentialPublicKey,
+          // Ensure credentialID is stored as a Buffer
+          credentialID: Buffer.from(credentialID),
+          // Ensure credentialPublicKey is stored as a Buffer
+          credentialPublicKey: Buffer.from(credentialPublicKey),
           counter,
           transports: credential.response.transports || []
         });
         
+        console.log('Device after storage:', JSON.stringify(user.devices[0], null, 2));
+        
         delete user.currentChallenge;
         res.json({ verified: true });
-    } else {
+      } else {
         res.status(400).json({ error: 'Verification failed' });
+      }
+    } catch (error) {
+      console.error('Error verifying registration:', error);
+      res.status(500).json({ error: 'Verification error' });
     }
-  } catch (error) {
-    console.error('Error verifying registration:', error);
-    res.status(500).json({ error: 'Verification error' });
-  }
 });
 
 // Authentication: Generate options
