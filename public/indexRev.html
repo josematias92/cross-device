@@ -114,8 +114,11 @@
 
     // Function to fetch and display QR code
     async function displayQRCode() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const email = urlParams.get('email') || ''; // Retrieve the email query parameter
+      
       try {
-        const response = await fetch(`${BASE_URL}/generate-qr`);
+        const response = await fetch(`${BASE_URL}/generate-qr?email=${email}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to fetch QR code');
         
