@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const path = require('path'); // Add path module
 const cors = require('cors');
+const qrcode = require('qrcode'); // Use lowercase 'qrcode' for npm package
 
 const {
   generateRegistrationOptions,
@@ -350,7 +351,7 @@ app.get('/generate-qr', async (req, res) => {
   const qrUrl = 'https://mex-node.space/cool?session=123456'; // Hardcoded URL
   try {
     // Generate QR code as a data URL (base64 PNG)
-    const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
+    const qrCodeDataUrl = await qrcode.toDataURL(qrUrl, {
       width: 150,
       color: { dark: '#f97316', light: '#ffffff' }, // Home Depot orange
     });
