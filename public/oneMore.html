@@ -149,22 +149,24 @@
 
     let countdownTimer = null;
 
-    // Show welcome screen for 2 seconds, then reveal auth card
+    // Show welcome screen for 2 seconds, then start authentication
     setTimeout(() => {
       welcome.classList.add('hidden');
       authCard.classList.remove('hidden');
+      usernameInput.focus(); // Auto-focus the input field
     }, 2000);
 
-    // Trigger countdown on email input
+    // Trigger countdown only after welcome disappears and email is entered
     usernameInput.addEventListener('input', () => {
       const username = usernameInput.value.trim();
-      if (!username) {
-        clearCountdown();
-        return;
-      }
+      if (!username || !authCard.classList.contains('hidden')) return;
 
-      clearCountdown();
-      startCountdown(username);
+      // Wait for welcome to disappear before starting countdown
+      setTimeout(() => {
+        if (usernameInput.value.trim() === username) { // Ensure email hasn't changed
+          startCountdown(username);
+        }
+      }, 2000); // Match welcome disappearance timing
     });
 
     function clearCountdown() {
