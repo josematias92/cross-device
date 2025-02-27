@@ -49,6 +49,13 @@
             background-color: #f2dede;
             color: #a94442;
         }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            overflow: auto;
+            max-height: 200px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -63,6 +70,7 @@
                 <button id="registerButton">Register with Passkey</button>
             </div>
             <div id="registerStatus" class="status"></div>
+            <pre id="registerDebug"></pre>
         </div>
         
         <div class="panel">
@@ -73,6 +81,7 @@
                 <button id="loginButton">Login with Passkey</button>
             </div>
             <div id="loginStatus" class="status"></div>
+            <pre id="loginDebug"></pre>
         </div>
     </div>
     
@@ -80,12 +89,43 @@
         // Import WebAuthn browser libraries from CDN
         import { startRegistration, startAuthentication } from 'https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@7/dist/bundle/index.js';
         
-        const serverUrl = 'https://mex-node.space'; // Using the domain from server configuration
+        // Exact URL that matches your rpID configuration
+        const serverUrl = 'https://mex-node.space';
+        
+        // Debug logging function
+        function logDebug(element, data) {
+            element.textContent += JSON.stringify(data, null, 2) + '\n\n';
+        }
+        
+        // Clear debug logs
+        document.getElementById('registerDebug').textContent = '';
+        document.getElementById('loginDebug').textContent = '';
+        
+        // Check WebAuthn support
+        if (!window.PublicKeyCredential) {
+            showStatus(document.getElementById('registerStatus'), 
+                       'WebAuthn is not supported in this browser', false);
+            showStatus(document.getElementById('loginStatus'), 
+                       'WebAuthn is not supported in this browser', false);
+        } else {
+            logDebug(document.getElementById('registerDebug'), 
+                    {message: 'WebAuthn is supported in this browser'});
+            
+            // Check platform authenticator support
+            PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+                .then((available) => {
+                    logDebug(document.getElementById('registerDebug'), 
+                            {platformAuthenticatorAvailable: available});
+                });
+        }
         
         // Registration process
         document.getElementById('registerButton').addEventListener('click', async () => {
             const username = document.getElementById('registerUsername').value.trim();
             const statusElement = document.getElementById('registerStatus');
+            const debugElement = document.getElementById('registerDebug');
+            
+            debugElement.textContent = ''; // Clear previous logs
             
             if (!username) {
                 showStatus(statusElement, 'Please enter a username', false);
@@ -107,10 +147,12 @@
                 }
                 
                 const options = await optionsResponse.json();
+                logDebug(debugElement, {registrationOptions: options});
                 showStatus(statusElement, 'Follow prompts on your device...', true);
                 
                 // Step 2: Start WebAuthn registration ceremony with the received options
                 const credential = await startRegistration(options);
+                logDebug(debugElement, {credential: credential});
                 
                 // Step 3: Send the credential to the server for verification
                 showStatus(statusElement, 'Verifying registration...', true);
@@ -120,20 +162,24 @@
                     body: JSON.stringify({ username, credential })
                 });
                 
-                if (!verificationResponse.ok) {
-                    const error = await verificationResponse.json();
-                    throw new Error(error.error || 'Registration verification failed');
-                }
-                
                 const verification = await verificationResponse.json();
+                logDebug(debugElement, {verificationResponse: verification});
+                
                 if (verification.verified) {
                     showStatus(statusElement, 'Registration successful! You can now login.', true);
+                    
+                    // Check for conditional UI support
+                    if (PublicKeyCredential.isConditionalMediationAvailable) {
+                        const conditionalSupport = await PublicKeyCredential.isConditionalMediationAvailable();
+                        logDebug(debugElement, {conditionalMediationSupported: conditionalSupport});
+                    }
                 } else {
-                    showStatus(statusElement, 'Registration failed', false);
+                    showStatus(statusElement, 'Registration failed: ' + (verification.error || 'Unknown error'), false);
                 }
                 
             } catch (error) {
                 showStatus(statusElement, `Error: ${error.message}`, false);
+                logDebug(debugElement, {error: error.toString(), stack: error.stack});
                 console.error(error);
             }
         });
@@ -142,6 +188,9 @@
         document.getElementById('loginButton').addEventListener('click', async () => {
             const username = document.getElementById('loginUsername').value.trim();
             const statusElement = document.getElementById('loginStatus');
+            const debugElement = document.getElementById('loginDebug');
+            
+            debugElement.textContent = ''; // Clear previous logs
             
             if (!username) {
                 showStatus(statusElement, 'Please enter a username', false);
@@ -163,10 +212,12 @@
                 }
                 
                 const options = await optionsResponse.json();
+                logDebug(debugElement, {authenticationOptions: options});
                 showStatus(statusElement, 'Follow prompts on your device...', true);
                 
                 // Step 2: Start WebAuthn authentication ceremony with the received options
                 const credential = await startAuthentication(options);
+                logDebug(debugElement, {credential: credential});
                 
                 // Step 3: Send the credential to the server for verification
                 showStatus(statusElement, 'Verifying authentication...', true);
@@ -176,20 +227,18 @@
                     body: JSON.stringify({ username, credential })
                 });
                 
-                if (!verificationResponse.ok) {
-                    const error = await verificationResponse.json();
-                    throw new Error(error.error || 'Authentication verification failed');
-                }
-                
                 const verification = await verificationResponse.json();
+                logDebug(debugElement, {verificationResponse: verification});
+                
                 if (verification.verified) {
                     showStatus(statusElement, 'Authentication successful! You are now logged in.', true);
                 } else {
-                    showStatus(statusElement, 'Authentication failed', false);
+                    showStatus(statusElement, 'Authentication failed: ' + (verification.error || 'Unknown error'), false);
                 }
                 
             } catch (error) {
                 showStatus(statusElement, `Error: ${error.message}`, false);
+                logDebug(debugElement, {error: error.toString(), stack: error.stack});
                 console.error(error);
             }
         });
