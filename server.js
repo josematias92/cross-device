@@ -348,7 +348,13 @@ app.post('/auth/verify', async (req, res) => {
 
 // New endpoint to generate QR code
 app.get('/generate-qr', async (req, res) => {
-  const qrUrl = 'https://mex-node.space/cool?session=123456'; // Hardcoded URL
+  const email = req.query.email;
+
+  const baseUrl = 'https://mex-node.space/cool';
+  const qrUrl = `${baseUrl}?email=${email}`;
+  
+  // Hardcoded URL
+  
   try {
     // Generate QR code as a data URL (base64 PNG)
     const qrCodeDataUrl = await qrcode.toDataURL(qrUrl, {
