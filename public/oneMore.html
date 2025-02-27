@@ -36,8 +36,8 @@
       50% { opacity: 1; }
     }
     .rocket {
-      width: 60px;
-      height: 100px;
+      width: 50px;
+      height: 80px;
       background: linear-gradient(180deg, #f97316, #ffffff);
       border-radius: 50% 50% 10% 10%;
       position: relative;
@@ -46,19 +46,37 @@
     .rocket::before {
       content: '';
       position: absolute;
-      bottom: -20px;
+      bottom: -15px;
       left: 50%;
       transform: translateX(-50%);
-      width: 20px;
-      height: 20px;
+      width: 15px;
+      height: 15px;
       background: #f97316;
       border-radius: 50%;
       animation: flame 0.5s infinite alternate;
     }
+    @media (max-width: 640px) {
+      .rocket {
+        width: 40px;
+        height: 60px;
+      }
+      .rocket::before {
+        bottom: -10px;
+        width: 10px;
+        height: 10px;
+      }
+    }
     @keyframes launch {
-      0% { transform: translateY(100px); }
-      50% { transform: translateY(-20px); }
-      100% { transform: translateY(-200px) translateX(-50px); }
+      0% { transform: translateY(80px); }
+      50% { transform: translateY(-15px); }
+      100% { transform: translateY(-150px) translateX(-40px); }
+    }
+    @media (max-width: 640px) {
+      @keyframes launch {
+        0% { transform: translateY(60px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(-100px) translateX(-30px); }
+      }
     }
     @keyframes flame {
       0% { transform: translateX(-50%) scale(1); opacity: 0.8; }
@@ -86,28 +104,23 @@
 
   <!-- Welcome Screen -->
   <div id="welcome" class="welcome-screen">
-    <h1 class="text-6xl font-bold text-white drop-shadow-lg">Welcome to The Home Depot</h1>
+    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white drop-shadow-lg text-center px-4">
+      Welcome to The Home Depot
+    </h1>
   </div>
 
   <!-- Authentication Card -->
-  <div id="auth-card" class="relative z-10 bg-gray-800 bg-opacity-90 p-8 rounded-2xl glow pulse max-w-lg w-full text-center hidden">
-    <h1 class="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
+  <div id="auth-card" class="relative z-10 bg-gray-800 bg-opacity-90 p-6 sm:p-8 rounded-2xl glow pulse max-w-md w-full text-center hidden">
+    <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
       Passkey Authentication
     </h1>
-
-    <input 
-      type="email" 
-      id="username" 
-      placeholder="Enter your email" 
-      class="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 text-lg mb-6"
-    >
 
     <!-- Rocket -->
     <div id="rocket" class="rocket mx-auto hidden"></div>
 
     <!-- Countdown and Status -->
-    <div id="countdown" class="text-3xl font-bold text-orange-400 mb-4"></div>
-    <div id="status" class="text-lg font-medium"></div>
+    <div id="countdown" class="text-xl sm:text-2xl md:text-3xl font-bold text-orange-400 mb-4"></div>
+    <div id="status" class="text-base sm:text-lg font-medium"></div>
   </div>
 
   <script>
@@ -141,33 +154,20 @@
 
     const welcome = document.getElementById('welcome');
     const authCard = document.getElementById('auth-card');
-    const usernameInput = document.getElementById('username');
     const countdownDisplay = document.getElementById('countdown');
     const status = document.getElementById('status');
     const rocket = document.getElementById('rocket');
     const BASE_URL = 'http://localhost:4000';
+    const DEFAULT_USERNAME = 'test@example.com'; // Hardcoded for demo; adjust as needed
 
     let countdownTimer = null;
 
-    // Show welcome screen for 2 seconds, then start authentication
+    // Show welcome screen for 2 seconds, then start countdown
     setTimeout(() => {
       welcome.classList.add('hidden');
       authCard.classList.remove('hidden');
-      usernameInput.focus(); // Auto-focus the input field
+      startCountdown(DEFAULT_USERNAME);
     }, 2000);
-
-    // Trigger countdown only after welcome disappears and email is entered
-    usernameInput.addEventListener('input', () => {
-      const username = usernameInput.value.trim();
-      if (!username || !authCard.classList.contains('hidden')) return;
-
-      // Wait for welcome to disappear before starting countdown
-      setTimeout(() => {
-        if (usernameInput.value.trim() === username) { // Ensure email hasn't changed
-          startCountdown(username);
-        }
-      }, 2000); // Match welcome disappearance timing
-    });
 
     function clearCountdown() {
       if (countdownTimer) {
