@@ -120,4 +120,127 @@
 
     <button 
       id="register-btn" 
-      class="w-full p-3 sm:p-4 btn-orange rounded-lg text-white text-base sm
+      class="w-full p-3 sm:p-4 btn-orange rounded-lg text-white text-base sm:text-lg font-semibold"
+    >
+      Register Passkey
+    </button>
+
+    <!-- Rocket -->
+    <div id="rocket" class="rocket mx-auto hidden mt-4 sm:mt-6"></div>
+
+    <!-- QR Code and Status -->
+    <div id="qr-code" class="mx-auto mb-4 sm:mb-6 hidden"></div>
+    <div id="status" class="text-base sm:text-lg font-medium text-gray-800"></div>
+  </div>
+
+  <script>
+    // Base64url to ArrayBuffer conversion
+    function base64urlToArrayBuffer(base64url) {
+      const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      const binary = atob(base64);
+      const buffer = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      return buffer.buffer;
+    }
+
+    // ArrayBuffer to base64url conversion
+    function arrayBufferToBase64url(buffer) {
+      const binary = String.fromCharCode(...new Uint8Array(buffer));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    const welcome = document.getElementById('welcome');
+    const regCard = document.getElementById('reg-card');
+    const usernameInput = document.getElementById('username');
+    const registerBtn = document.getElementById('register-btn');
+    const qrCodeDiv = document.getElementById('qr-code');
+    const status = document.getElementById('status');
+    const rocket = document.getElementById('rocket');
+    const BASE_URL = 'http://localhost:4000';
+    const QR_URL = 'https://mex-node.space/cool?session=123456'; // Embedded QR URL
+
+    // Show welcome screen for 2 seconds, then reveal registration card
+    setTimeout(() => {
+      welcome.classList.add('hidden');
+      regCard.classList.remove('hidden');
+      usernameInput.focus();
+    }, 2000);
+
+    // Trigger registration on button click
+    registerBtn.addEventListener('click', () => {
+      const username = usernameInput.value.trim();
+      if (!username) {
+        status.textContent = 'Please enter your email!';
+        status.className = 'text-red-600';
+        qrCodeDiv.classList.add('hidden');
+        rocket.classList.add('hidden');
+        return;
+      }
+
+      registerPasskey(username);
+    });
+
+    async function registerPasskey(username) {
+      status.textContent = 'Preparing passkey registration...';
+      status.className = 'text-orange-600';
+      rocket.classList.remove('hidden');
+
+      try {
+        const optsResp = await fetch(`${BASE_URL}/register/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const opts = await optsResp.json();
+        if (!optsResp.ok) throw new Error(opts.error || 'Failed to get options');
+
+        opts.challenge = base64urlToArrayBuffer(opts.challenge);
+        opts.user.id = base64urlToArrayBuffer(opts.user.id);
+
+        status.textContent = 'Creating your passkey...';
+        const credential = await navigator.credentials.create({ publicKey: opts });
+
+        const credBody = {
+          id: credential.id,
+          rawId: credential.id,
+          response: {
+            attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
+            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON)
+          },
+          type: credential.type
+        };
+
+        status.textContent = 'Verifying registration...';
+        const verifyResp = await fetch(`${BASE_URL}/register/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, credential: credBody })
+        });
+        const result = await verifyResp.json();
+
+        if (result.verified) {
+          status.textContent = 'Passkey registered! Scan QR code if needed.';
+          status.className = 'text-green-600';
+          rocket.style.animation = 'none'; // Stop rocket on success
+
+          // Display QR code
+          qrCodeDiv.classList.remove('hidden');
+          QRCode.toCanvas(qrCodeDiv, QR_URL, { width: 150, color: { dark: '#f97316', light: '#ffffff' } }, (error) => {
+            if (error) console.error('QR Code generation error:', error);
+          });
+        } else {
+          throw new Error(result.error || 'Verification failed');
+        }
+      } catch (error) {
+        status.textContent = `Error: ${error.message}`;
+        status.className = 'text-red-600';
+        console.error('Registration error:', error);
+        rocket.style.animation = 'none'; // Stop rocket on error
+        qrCodeDiv.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
