@@ -104,172 +104,177 @@
 
   <!-- Welcome Screen -->
   <div id="welcome" class="welcome-screen">
-    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white drop-shadow-lg text-center px-4">
-      Welcome to The Home Depot
-    </h1>
+    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white drop-shadow-lg">Welcome to The Home Depot</h1>
   </div>
 
   <!-- Authentication Card -->
-  <div id="auth-card" class="relative z-10 bg-gray-800 bg-opacity-90 p-6 sm:p-8 rounded-2xl glow pulse max-w-md w-full text-center hidden">
-    <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
+  <div id="auth-card" class="relative z-10 bg-gray-800 bg-opacity-90 p-8 rounded-2xl glow pulse max-w-lg w-full text-center hidden">
+    <h1 class="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
       Passkey Authentication
     </h1>
+
+    <input 
+      type="email" 
+      id="username" 
+      placeholder="Enter your email" 
+      class="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 text-lg mb-6"
+    >
 
     <!-- Rocket -->
     <div id="rocket" class="rocket mx-auto hidden"></div>
 
     <!-- Countdown and Status -->
-    <div id="countdown" class="text-xl sm:text-2xl md:text-3xl font-bold text-orange-400 mb-4"></div>
-    <div id="status" class="text-base sm:text-lg font-medium"></div>
+    <div id="countdown" class="text-3xl font-bold text-orange-400 mb-4"></div>
+    <div id="status" class="text-lg font-medium"></div>
   </div>
 
   <script>
     // Generate twinkling stars
-const starsContainer = document.getElementById('stars-container');
-for (let i = 0; i < 150; i++) {
-  const star = document.createElement('div');
-  star.className = 'stars';
-  star.style.left = `${Math.random() * 100}vw`;
-  star.style.top = `${Math.random() * 100}vh`;
-  star.style.animationDelay = `${Math.random() * 3}s`;
-  starsContainer.appendChild(star);
-}
-
-// Base64url to ArrayBuffer conversion
-function base64urlToArrayBuffer(base64url) {
-  const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-  const binary = atob(base64);
-  const buffer = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    buffer[i] = binary.charCodeAt(i);
-  }
-  return buffer.buffer;
-}
-
-// ArrayBuffer to base64url conversion
-function arrayBufferToBase64url(buffer) {
-  const binary = String.fromCharCode(...new Uint8Array(buffer));
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-const welcome = document.getElementById('welcome');
-const authCard = document.getElementById('auth-card');
-const usernameInput = document.getElementById('username');
-const countdownDisplay = document.getElementById('countdown');
-const status = document.getElementById('status');
-const rocket = document.getElementById('rocket');
-const BASE_URL = 'http://localhost:4000';
-
-let countdownTimer = null;
-
-// Show welcome screen for 2 seconds, then start countdown
-setTimeout(() => {
-  welcome.classList.add('hidden');
-  authCard.classList.remove('hidden');
-  usernameInput.focus();
-}, 2000);
-
-// Trigger countdown on email input
-usernameInput.addEventListener('input', () => {
-  const username = usernameInput.value.trim();
-  if (!username) {
-    clearCountdown();
-    return;
-  }
-
-  clearCountdown();
-  setTimeout(() => {
-    if (usernameInput.value.trim() === username) {
-      startCountdown(username);
+    const starsContainer = document.getElementById('stars-container');
+    for (let i = 0; i < 150; i++) {
+      const star = document.createElement('div');
+      star.className = 'stars';
+      star.style.left = `${Math.random() * 100}vw`;
+      star.style.top = `${Math.random() * 100}vh`;
+      star.style.animationDelay = `${Math.random() * 3}s`;
+      starsContainer.appendChild(star);
     }
-  }, 2000);
-});
 
-function clearCountdown() {
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
-  }
-  countdownDisplay.textContent = '';
-  status.textContent = '';
-  rocket.classList.add('hidden');
-  rocket.style.animation = 'launch 4s ease-in-out forwards'; // Reset animation
-}
+    // Base64url to ArrayBuffer conversion
+    function base64urlToArrayBuffer(base64url) {
+      const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      const binary = atob(base64);
+      const buffer = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      return buffer.buffer;
+    }
 
-function startCountdown(username) {
-  let count = 4;
-  countdownDisplay.textContent = `Authenticating in ${count}...`;
-  rocket.classList.remove('hidden');
+    // ArrayBuffer to base64url conversion
+    function arrayBufferToBase64url(buffer) {
+      const binary = String.fromCharCode(...new Uint8Array(buffer));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
 
-  countdownTimer = setInterval(async () => {
-    count--;
-    if (count > 0) {
-      countdownDisplay.textContent = `Authenticating in ${count}...`;
-    } else {
-      clearInterval(countdownTimer);
+    const welcome = document.getElementById('welcome');
+    const authCard = document.getElementById('auth-card');
+    const usernameInput = document.getElementById('username');
+    const countdownDisplay = document.getElementById('countdown');
+    const status = document.getElementById('status');
+    const rocket = document.getElementById('rocket');
+    const BASE_URL = 'http://localhost:4000';
+
+    let countdownTimer = null;
+
+    // Show welcome screen for 2 seconds, then start countdown
+    setTimeout(() => {
+      welcome.classList.add('hidden');
+      authCard.classList.remove('hidden');
+      usernameInput.focus();
+    }, 2000);
+
+    // Trigger countdown on email input
+    usernameInput.addEventListener('input', () => {
+      const username = usernameInput.value.trim();
+      if (!username) {
+        clearCountdown();
+        return;
+      }
+
+      clearCountdown();
+      setTimeout(() => {
+        if (usernameInput.value.trim() === username) {
+          startCountdown(username);
+        }
+      }, 2000);
+    });
+
+    function clearCountdown() {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
       countdownDisplay.textContent = '';
-      await authenticate(username);
+      status.textContent = '';
+      rocket.classList.add('hidden');
+      rocket.style.animation = 'launch 4s ease-in-out forwards'; // Reset animation
     }
-  }, 1000);
-}
 
-// Authenticate with Passkey
-async function authenticate(username) {
-  status.textContent = 'Preparing authentication...';
-  status.className = 'text-orange-400';
+    function startCountdown(username) {
+      let count = 4;
+      countdownDisplay.textContent = `Authenticating in ${count}...`;
+      rocket.classList.remove('hidden');
 
-  try {
-    const optsResp = await fetch(`${BASE_URL}/auth/options`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username })
-    });
-    const opts = await optsResp.json();
-    if (!optsResp.ok) throw new Error(opts.error || 'Failed to get authentication options');
-
-    opts.challenge = base64urlToArrayBuffer(opts.challenge);
-    opts.allowCredentials = opts.allowCredentials.map(cred => ({
-      ...cred,
-      id: base64urlToArrayBuffer(cred.id)
-    }));
-
-    status.textContent = 'Awaiting passkey authentication...';
-    const credential = await navigator.credentials.get({ publicKey: opts });
-
-    const credBody = {
-      id: credential.id,
-      rawId: credential.id,
-      response: {
-        authenticatorData: arrayBufferToBase64url(credential.response.authenticatorData),
-        clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
-        signature: arrayBufferToBase64url(credential.response.signature),
-        userHandle: credential.response.userHandle ? arrayBufferToBase64url(credential.response.userHandle) : null
-      },
-      type: credential.type
-    };
-
-    status.textContent = 'Verifying authentication...';
-    const verifyResp = await fetch(`${BASE_URL}/auth/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, credential: credBody })
-    });
-    const result = await verifyResp.json();
-
-    if (result.verified) {
-      status.textContent = 'Welcome back to The Home Depot!';
-      status.className = 'text-green-400';
-      rocket.style.animation = 'none'; // Stop rocket on success
-    } else {
-      throw new Error(result.error || 'Verification failed');
+      countdownTimer = setInterval(async () => {
+        count--;
+        if (count > 0) {
+          countdownDisplay.textContent = `Authenticating in ${count}...`;
+        } else {
+          clearInterval(countdownTimer);
+          countdownDisplay.textContent = '';
+          await authenticate(username);
+        }
+      }, 1000);
     }
-  } catch (error) {
-    status.textContent = `Error: ${error.message}`;
-    status.className = 'text-red-400';
-    console.error('Authentication error:', error);
-    rocket.style.animation = 'none'; // Stop rocket on error
-  }
-}
+
+    // Authenticate with Passkey
+    async function authenticate(username) {
+      status.textContent = 'Preparing authentication...';
+      status.className = 'text-orange-400';
+
+      try {
+        const optsResp = await fetch(`${BASE_URL}/auth/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const opts = await optsResp.json();
+        if (!optsResp.ok) throw new Error(opts.error || 'Failed to get authentication options');
+
+        opts.challenge = base64urlToArrayBuffer(opts.challenge);
+        opts.allowCredentials = opts.allowCredentials.map(cred => ({
+          ...cred,
+          id: base64urlToArrayBuffer(cred.id)
+        }));
+
+        status.textContent = 'Awaiting passkey authentication...';
+        const credential = await navigator.credentials.get({ publicKey: opts });
+
+        const credBody = {
+          id: credential.id,
+          rawId: credential.id,
+          response: {
+            authenticatorData: arrayBufferToBase64url(credential.response.authenticatorData),
+            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+            signature: arrayBufferToBase64url(credential.response.signature),
+            userHandle: credential.response.userHandle ? arrayBufferToBase64url(credential.response.userHandle) : null
+          },
+          type: credential.type
+        };
+
+        status.textContent = 'Verifying authentication...';
+        const verifyResp = await fetch(`${BASE_URL}/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, credential: credBody })
+        });
+        const result = await verifyResp.json();
+
+        if (result.verified) {
+          status.textContent = 'Welcome back to The Home Depot!';
+          status.className = 'text-green-400';
+          rocket.style.animation = 'none'; // Stop rocket on success
+        } else {
+          throw new Error(result.error || 'Verification failed');
+        }
+      } catch (error) {
+        status.textContent = `Error: ${error.message}`;
+        status.className = 'text-red-400';
+        console.error('Authentication error:', error);
+        rocket.style.animation = 'none'; // Stop rocket on error
+      }
+    }
   </script>
 </body>
 </html>
