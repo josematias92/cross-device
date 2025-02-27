@@ -217,7 +217,7 @@ app.post('/register/verify', async (req, res) => {
 app.post('/auth/options', async (req, res) => {
     const { username } = req.body;
 
-    sessions[username] = {username: username}
+    sessions[username] = false
 
     console.log(sessions, "SESSIONS")
     if (!username) {
@@ -297,6 +297,7 @@ app.post('/auth/verify', async (req, res) => {
     const authenticator = user.devices.find(device => {
       matches = device.credentialID.equals(Buffer.from(credential.id, 'base64url'));
       console.log(`Comparing: ${device.credentialID.toString('base64url')} with ${credential.id}, matches: ${matches}`);
+      sessions[username] = true
       return matches;
     });
 
