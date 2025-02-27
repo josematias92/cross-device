@@ -384,6 +384,8 @@ app.get('/shouldIContinue', async (req, res) => {
   try {
       if(!!sessions[email] && sessions[email] === true ) {
         res.sendFile(path.join(__dirname, "public" ,'success.html'));
+      } else {
+        res.status(401).json({ error: 'Not yet' });
       }
       
     } catch (error) {
