@@ -383,11 +383,21 @@ app.get('/shouldIContinue', async (req, res) => {
   
   try {
       if(!!sessions[email] && sessions[email] === true ) {
-        res.sendFile(path.join(__dirname, "public" ,'success.html'));
+        res.status(200).json({success: true})
       } else {
         res.status(401).json({ error: 'Not yet' });
       }
       
+    } catch (error) {
+      console.error('Something wrong', error);
+      res.status(401).json({ error: 'Not quite' });
+    }
+});
+
+app.get('/success', async (req, res) => {
+  
+  try {
+     res.sendFile(path.join(__dirname, "public" ,'success.html'));
     } catch (error) {
       console.error('Something wrong', error);
       res.status(401).json({ error: 'Not quite' });
