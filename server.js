@@ -378,6 +378,20 @@ app.get('/generate-qr', async (req, res) => {
   }
 });
 
+app.get('/shouldIContinue', async (req, res) => {
+  const email = req.query.email;
+  
+  try {
+      if(!!sessions[email] && sessions[email] === true ) {
+        res.sendFile(path.join(__dirname, "public" ,'success.html'));
+      }
+      
+    } catch (error) {
+      console.error('Something wrong', error);
+      res.status(500).json({ error: 'Failed to success page' });
+    }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'indexRev.html'));
 });
