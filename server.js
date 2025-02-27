@@ -388,7 +388,7 @@ app.get('/shouldIContinue', async (req, res) => {
       
     } catch (error) {
       console.error('Something wrong', error);
-      res.status(500).json({ error: 'Failed to success page' });
+      res.status(401).json({ error: 'Not quite' });
     }
 });
 
