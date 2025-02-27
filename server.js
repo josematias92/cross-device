@@ -345,6 +345,21 @@ app.post('/auth/verify', async (req, res) => {
   }
 });
 
+// New endpoint to generate QR code
+app.get('/generate-qr', async (req, res) => {
+  const qrUrl = 'https://mex-node.space/cool?session=123456'; // Hardcoded URL
+  try {
+    // Generate QR code as a data URL (base64 PNG)
+    const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 150,
+      color: { dark: '#f97316', light: '#ffffff' }, // Home Depot orange
+    });
+    res.json({ qrCode: qrCodeDataUrl });
+  } catch (error) {
+    console.error('QR Code generation error:', error);
+    res.status(500).json({ error: 'Failed to generate QR code' });
+  }
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'indexRev.html'));
