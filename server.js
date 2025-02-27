@@ -27,6 +27,7 @@ app.use(cors({
 
 // In-memory storage (replace with a database in production)
 const users = {}; // { username: { id: Buffer, devices: [] } }
+const sessions = {};
 
 setInterval(() => {
   console.log({users});
@@ -214,6 +215,10 @@ app.post('/register/verify', async (req, res) => {
 // Authentication: Generate options
 app.post('/auth/options', async (req, res) => {
     const { username } = req.body;
+
+    sessions[username] = {username: username}
+
+    console.log(sessions, "SESSIONS")
     if (!username) {
       return res.status(400).json({ error: 'Username is required' });
     }
