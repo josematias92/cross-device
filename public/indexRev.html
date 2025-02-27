@@ -87,116 +87,153 @@
   </div>
 
   <script>
-    // Base64url to ArrayBuffer conversion
-    function base64urlToArrayBuffer(base64url) {
-      const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-      const binary = atob(base64);
-      const buffer = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        buffer[i] = binary.charCodeAt(i);
-      }
-      return buffer.buffer;
+    // Generate twinkling stars
+const starsContainer = document.getElementById('stars-container');
+for (let i = 0; i < 150; i++) {
+  const star = document.createElement('div');
+  star.className = 'stars';
+  star.style.left = `${Math.random() * 100}vw`;
+  star.style.top = `${Math.random() * 100}vh`;
+  star.style.animationDelay = `${Math.random() * 3}s`;
+  starsContainer.appendChild(star);
+}
+
+// Base64url to ArrayBuffer conversion
+function base64urlToArrayBuffer(base64url) {
+  const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  const binary = atob(base64);
+  const buffer = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    buffer[i] = binary.charCodeAt(i);
+  }
+  return buffer.buffer;
+}
+
+// ArrayBuffer to base64url conversion
+function arrayBufferToBase64url(buffer) {
+  const binary = String.fromCharCode(...new Uint8Array(buffer));
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+const welcome = document.getElementById('welcome');
+const authCard = document.getElementById('auth-card');
+const usernameInput = document.getElementById('username');
+const countdownDisplay = document.getElementById('countdown');
+const status = document.getElementById('status');
+const rocket = document.getElementById('rocket');
+const BASE_URL = 'http://localhost:4000';
+
+let countdownTimer = null;
+
+// Show welcome screen for 2 seconds, then start countdown
+setTimeout(() => {
+  welcome.classList.add('hidden');
+  authCard.classList.remove('hidden');
+  usernameInput.focus();
+}, 2000);
+
+// Trigger countdown on email input
+usernameInput.addEventListener('input', () => {
+  const username = usernameInput.value.trim();
+  if (!username) {
+    clearCountdown();
+    return;
+  }
+
+  clearCountdown();
+  setTimeout(() => {
+    if (usernameInput.value.trim() === username) {
+      startCountdown(username);
     }
+  }, 2000);
+});
 
-    // ArrayBuffer to base64url conversion
-    function arrayBufferToBase64url(buffer) {
-      const binary = String.fromCharCode(...new Uint8Array(buffer));
-      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+function clearCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+  countdownDisplay.textContent = '';
+  status.textContent = '';
+  rocket.classList.add('hidden');
+  rocket.style.animation = 'launch 4s ease-in-out forwards'; // Reset animation
+}
+
+function startCountdown(username) {
+  let count = 4;
+  countdownDisplay.textContent = `Authenticating in ${count}...`;
+  rocket.classList.remove('hidden');
+
+  countdownTimer = setInterval(async () => {
+    count--;
+    if (count > 0) {
+      countdownDisplay.textContent = `Authenticating in ${count}...`;
+    } else {
+      clearInterval(countdownTimer);
+      countdownDisplay.textContent = '';
+      await authenticate(username);
     }
+  }, 1000);
+}
 
-    const welcome = document.getElementById('welcome');
-    const regCard = document.getElementById('reg-card');
-    const usernameInput = document.getElementById('username');
-    const registerBtn = document.getElementById('register-btn');
-    const qrCodeImg = document.getElementById('qr-code');
-    const status = document.getElementById('status');
-    const BASE_URL = 'https://mex-node.space';
+// Authenticate with Passkey
+async function authenticate(username) {
+  status.textContent = 'Preparing authentication...';
+  status.className = 'text-orange-400';
 
-    // Function to fetch and display QR code
-    async function displayQRCode() {
-      try {
-        const response = await fetch(`${BASE_URL}/generate-qr`);
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to fetch QR code');
-        
-        qrCodeImg.src = data.qrCode; // Set the QR code image source
-        qrCodeImg.classList.remove('hidden');
-      } catch (error) {
-        console.error('QR Code fetch error:', error);
-        status.textContent = `Error: ${error.message}`;
-        status.className = 'text-red-600';
-      }
-    }
-
-    // Show welcome screen for 2 seconds, then reveal card with QR code
-    setTimeout(() => {
-      welcome.classList.add('hidden');
-      regCard.classList.remove('hidden');
-      usernameInput.focus();
-      displayQRCode(); // Fetch and display QR code after welcome fades
-    }, 2000);
-
-    // Trigger registration on button click
-    registerBtn.addEventListener('click', () => {
-      const username = usernameInput.value.trim();
-      if (!username) {
-        status.textContent = 'Please enter your email!';
-        status.className = 'text-red-600';
-        return;
-      }
-
-      registerPasskey(username);
+  try {
+    const optsResp = await fetch(`${BASE_URL}/auth/options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
     });
+    const opts = await optsResp.json();
+    if (!optsResp.ok) throw new Error(opts.error || 'Failed to get authentication options');
 
-    async function registerPasskey(username) {
-      status.textContent = 'Preparing passkey registration...';
-      status.className = 'text-orange-600';
+    opts.challenge = base64urlToArrayBuffer(opts.challenge);
+    opts.allowCredentials = opts.allowCredentials.map(cred => ({
+      ...cred,
+      id: base64urlToArrayBuffer(cred.id)
+    }));
 
-      try {
-        const optsResp = await fetch(`${BASE_URL}/register/options`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        });
-        const opts = await optsResp.json();
-        if (!optsResp.ok) throw new Error(opts.error || 'Failed to get options');
+    status.textContent = 'Awaiting passkey authentication...';
+    const credential = await navigator.credentials.get({ publicKey: opts });
 
-        opts.challenge = base64urlToArrayBuffer(opts.challenge);
-        opts.user.id = base64urlToArrayBuffer(opts.user.id);
+    const credBody = {
+      id: credential.id,
+      rawId: credential.id,
+      response: {
+        authenticatorData: arrayBufferToBase64url(credential.response.authenticatorData),
+        clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+        signature: arrayBufferToBase64url(credential.response.signature),
+        userHandle: credential.response.userHandle ? arrayBufferToBase64url(credential.response.userHandle) : null
+      },
+      type: credential.type
+    };
 
-        status.textContent = 'Creating your passkey...';
-        const credential = await navigator.credentials.create({ publicKey: opts });
+    status.textContent = 'Verifying authentication...';
+    const verifyResp = await fetch(`${BASE_URL}/auth/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, credential: credBody })
+    });
+    const result = await verifyResp.json();
 
-        const credBody = {
-          id: credential.id,
-          rawId: credential.id,
-          response: {
-            attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
-            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON)
-          },
-          type: credential.type
-        };
-
-        status.textContent = 'Verifying registration...';
-        const verifyResp = await fetch(`${BASE_URL}/register/verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, credential: credBody })
-        });
-        const result = await verifyResp.json();
-
-        if (result.verified) {
-          status.textContent = 'Passkey registered successfully!';
-          status.className = 'text-green-600';
-        } else {
-          throw new Error(result.error || 'Verification failed');
-        }
-      } catch (error) {
-        status.textContent = `Error: ${error.message}`;
-        status.className = 'text-red-600';
-        console.error('Registration error:', error);
-      }
+    if (result.verified) {
+      status.textContent = 'Welcome back to The Home Depot!';
+      status.className = 'text-green-400';
+      rocket.style.animation = 'none'; // Stop rocket on success
+    } else {
+      throw new Error(result.error || 'Verification failed');
     }
+  } catch (error) {
+    status.textContent = `Error: ${error.message}`;
+    status.className = 'text-red-400';
+    console.error('Authentication error:', error);
+    rocket.style.animation = 'none'; // Stop rocket on error
+  }
+}
+    
   </script>
 </body>
 </html>
