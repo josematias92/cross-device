@@ -270,6 +270,7 @@ app.post('/auth/options', async (req, res) => {
 });
 
 // Authentication: Verify response
+// Authentication: Verify response
 app.post('/auth/verify', async (req, res) => {
   const { username, credential } = req.body;
   if (!username || !credential) {
@@ -281,14 +282,47 @@ app.post('/auth/verify', async (req, res) => {
     return res.status(404).json({ error: 'User or passkey not found' });
   }
 
-  const authenticator = user.devices.find(device =>
-    device.credentialID.equals(Buffer.from(credential.rawId, 'base64url'))
-  );
-  if (!authenticator) {
-    return res.status(400).json({ error: 'Passkey not recognized' });
-  }
-
   try {
+    // Log incoming credential for debugging
+    console.log('Authentication credential:', {
+      id: credential.id,
+      rawId: credential.rawId
+    });
+
+    // Enhanced logging of stored devices
+    console.log('User devices:', user.devices.map(d => ({
+      credentialIDBase64url: d.credentialID.toString('base64url'),
+      hasCounter: d.counter !== undefined,
+      counterValue: d.counter,
+      hasPublicKey: !!d.credentialPublicKey
+    })));
+
+    // Find the matching authenticator
+    const authenticator = user.devices.find(device =>
+      device.credentialID.equals(Buffer.from(credential.rawId, 'base64url'))
+    );
+    
+    if (!authenticator) {
+      console.log('No matching authenticator found');
+      console.log('Incoming rawId:', credential.rawId);
+      console.log('Available credentials:', user.devices.map(d => d.credentialID.toString('base64url')));
+      return res.status(400).json({ error: 'Passkey not recognized' });
+    }
+
+    // Ensure authenticator has all required properties
+    console.log('Found authenticator:', {
+      hasCredentialID: !!authenticator.credentialID,
+      hasPublicKey: !!authenticator.credentialPublicKey,
+      hasCounter: authenticator.counter !== undefined,
+      counterValue: authenticator.counter
+    });
+    
+    // Ensure counter property exists (default to 0 if undefined)
+    if (authenticator.counter === undefined) {
+      console.log('Adding missing counter property');
+      authenticator.counter = 0;
+    }
+
     const verification = await verifyAuthenticationResponse({
       response: credential,
       expectedChallenge: user.currentChallenge,
@@ -298,6 +332,10 @@ app.post('/auth/verify', async (req, res) => {
     });
 
     if (verification.verified) {
+      // Update the counter for future authentications
+      if (verification.authenticationInfo && verification.authenticationInfo.newCounter !== undefined) {
+        authenticator.counter = verification.authenticationInfo.newCounter;
+      }
       delete user.currentChallenge;
       res.json({ verified: true });
     } else {
@@ -305,7 +343,8 @@ app.post('/auth/verify', async (req, res) => {
     }
   } catch (error) {
     console.error('Error verifying authentication:', error);
-    res.status(500).json({ error: 'Verification error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Verification error: ' + error.message });
   }
 });
 
