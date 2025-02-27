@@ -103,7 +103,7 @@
           try {
             const response = await fetch(urlWithParams);
             const data = await response.json();
-            if(data) {
+            if (data.success) {
               window.location.href = `${BASE_URL}/success.html`;
             }
           } catch (error) {
