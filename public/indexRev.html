@@ -114,11 +114,17 @@
     const BASE_URL = 'http://localhost:4000';
     const QR_URL = 'https://mex-node.space/cool?session=123456'; // Embedded QR URL
 
-    // Show welcome screen for 2 seconds, then reveal registration card
+    // Show welcome screen for 2 seconds, then reveal registration card with QR code
     setTimeout(() => {
       welcome.classList.add('hidden');
       regCard.classList.remove('hidden');
       usernameInput.focus();
+
+      // Display QR code immediately after welcome fades
+      qrCodeDiv.classList.remove('hidden');
+      QRCode.toCanvas(qrCodeDiv, QR_URL, { width: 150, color: { dark: '#f97316', light: '#ffffff' } }, (error) => {
+        if (error) console.error('QR Code generation error:', error);
+      });
     }, 2000);
 
     // Trigger registration on button click
@@ -127,7 +133,6 @@
       if (!username) {
         status.textContent = 'Please enter your email!';
         status.className = 'text-red-600';
-        qrCodeDiv.classList.add('hidden');
         return;
       }
 
@@ -172,14 +177,8 @@
         const result = await verifyResp.json();
 
         if (result.verified) {
-          status.textContent = 'Passkey registered! Scan QR code if needed.';
+          status.textContent = 'Passkey registered successfully!';
           status.className = 'text-green-600';
-
-          // Display QR code
-          qrCodeDiv.classList.remove('hidden');
-          QRCode.toCanvas(qrCodeDiv, QR_URL, { width: 150, color: { dark: '#f97316', light: '#ffffff' } }, (error) => {
-            if (error) console.error('QR Code generation error:', error);
-          });
         } else {
           throw new Error(result.error || 'Verification failed');
         }
@@ -187,7 +186,6 @@
         status.textContent = `Error: ${error.message}`;
         status.className = 'text-red-600';
         console.error('Registration error:', error);
-        qrCodeDiv.classList.add('hidden');
       }
     }
   </script>
