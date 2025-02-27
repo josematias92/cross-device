@@ -112,16 +112,41 @@ app.post('/register/verify', async (req, res) => {
         expectedRPID: rpID,
       });
   
+      // Log the complete verification object to see its structure
+      console.log('Complete verification object:', verification);
+  
       if (verification.verified) {
-        // Log the exact structure of the verification object
-        console.log('Registration info keys:', Object.keys(verification.registrationInfo));
+        // Log the exact structure of the registration info
+        console.log('Registration info:', verification.registrationInfo);
+        console.log('Registration info keys:', Object.keys(verification.registrationInfo || {}));
 
         // Store original values from browser for debugging/comparison
         const originalId = credential.id;
         const originalRawId = credential.rawId;
         
-        // Extract credential data directly from verification object
-        const { credentialID, credentialPublicKey, counter = 0 } = verification.registrationInfo;
+        // Try multiple ways to extract credential data
+        let credentialID, credentialPublicKey, counter;
+        
+        if (verification.registrationInfo) {
+          // Standard path
+          credentialID = verification.registrationInfo.credentialID;
+          credentialPublicKey = verification.registrationInfo.credentialPublicKey;
+          counter = verification.registrationInfo.counter || 0;
+        }
+        
+        // If not found, try alternative paths or fallback to client data
+        if (!credentialID) {
+          if (credential.id && credential.rawId) {
+            console.log('Using fallback from client credential data');
+            credentialID = Buffer.from(credential.rawId, 'base64url');
+          }
+        }
+        
+        if (!credentialPublicKey && verification.registrationInfo) {
+          // Try alternative property names that might exist
+          credentialPublicKey = verification.registrationInfo.publicKey || 
+                                verification.registrationInfo.publicKeyBytes;
+        }
         
         // Log extracted values
         console.log('Extracted credential values:');
@@ -132,10 +157,17 @@ app.post('/register/verify', async (req, res) => {
         console.log('- counter:', counter);
         
         // Validate we have the required credential data
-        if (!credentialID || !credentialPublicKey) {
-          // If we still can't find credential data, log the entire verification object
-          console.log('Full verification object structure:', JSON.stringify(verification, null, 2));
-          throw new Error('Missing credential data in verification result');
+        if (!credentialID) {
+          console.log('Could not extract credentialID');
+          throw new Error('Missing credentialID in verification result');
+        }
+        
+        if (!credentialPublicKey) {
+          // For development, you can try using a dummy public key
+          console.log('WARNING: Could not extract credentialPublicKey');
+          // Uncomment this for testing
+          // credentialPublicKey = Buffer.alloc(32); // Create a dummy public key for testing
+          throw new Error('Missing credentialPublicKey in verification result');
         }
         
         // Store credential - ensure Buffer conversion for binary data (only once)
@@ -143,7 +175,7 @@ app.post('/register/verify', async (req, res) => {
           // Convert to Buffer only if not already a Buffer
           credentialID: Buffer.isBuffer(credentialID) ? credentialID : Buffer.from(credentialID),
           credentialPublicKey: Buffer.isBuffer(credentialPublicKey) ? credentialPublicKey : Buffer.from(credentialPublicKey),
-          counter,
+          counter: counter || 0,
           transports: credential.response.transports || [],
           // Store original values for comparison/debugging
           originalId,
@@ -155,7 +187,6 @@ app.post('/register/verify', async (req, res) => {
         console.log('- Device count:', user.devices.length);
         console.log('- credentialID stored as Buffer:', Buffer.isBuffer(user.devices[0].credentialID));
         console.log('- credentialPublicKey stored as Buffer:', Buffer.isBuffer(user.devices[0].credentialPublicKey));
-        console.log('- credentialID base64url:', user.devices[0].credentialID.toString('base64url'));
         
         delete user.currentChallenge;
         res.json({ verified: true });
@@ -164,9 +195,11 @@ app.post('/register/verify', async (req, res) => {
       }
     } catch (error) {
       console.error('Error verifying registration:', error);
+      console.error('Error details:', error.message);
       res.status(500).json({ error: 'Verification error: ' + error.message });
     }
 });
+
 
 // Authentication: Generate options
 app.post('/auth/options', async (req, res) => {
