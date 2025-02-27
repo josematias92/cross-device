@@ -186,6 +186,9 @@ app.post('/auth/options', async (req, res) => {
         //const credentialIDBase64 = Buffer.from(device.credentialID).toString('base64url');
         const credentialIDBase64 = device.credentialID.toString('base64url');
         console.log('Credential ID as base64url:', credentialIDBase64);
+
+        console.log('Original credential ID (hex):', device.credentialID.toString('hex'));
+        console.log('Credential ID as base64url:', credentialIDBase64);
         
         return {
           id: credentialIDBase64, // Use base64url string instead of raw Buffer
