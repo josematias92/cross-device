@@ -31,6 +31,7 @@ const sessions = {};
 
 setInterval(() => {
   console.log({users});
+  console.log({sessions});
 }, 20000);
 
 // Generate a random user ID
