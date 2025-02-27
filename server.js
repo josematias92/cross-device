@@ -350,8 +350,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'index.html'));
 });
 
-app.get('/index', (req, res) => {
-  res.sendFile(path.join(__dirname,'indexV3.html'));
+app.get('/cool', (req, res) => {
+  res.sendFile(path.join(__dirname, "public" ,'oneMore.html'));
 });
 
 // Start the server
