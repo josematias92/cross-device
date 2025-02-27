@@ -318,7 +318,7 @@ app.post('/auth/verify', async (req, res) => {
       //authForVerification.transports = authenticator.transports;
     //}
 
-    console.log('authForVerification:', JSON.stringify(authForVerification, null, 2));
+    // console.log('authForVerification:', JSON.stringify(authForVerification, null, 2));
 
     //const verification = await verifyAuthenticationResponse({
       //response: credential,
