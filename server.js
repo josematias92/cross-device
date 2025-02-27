@@ -11,8 +11,16 @@ const {
 const app = express();
 const port = 4000;
 
+const rpID = 'mex-node.space'; // Use your domain in production
+const rpName = 'Passkey Backend';
+const expectedOrigin = 'https://mex-node.space'; 
+
 // Middleware
 app.use(express.json());
+app.use(cors({
+  origin: expectedOrigin,
+  credentials: true
+}));
 
 // In-memory storage (replace with a database in production)
 const users = {}; // { username: { id: Buffer, devices: [] } }
@@ -21,15 +29,17 @@ setInterval(() => {
   console.log({users});
 }, 20000);
 
-// Relying Party (RP) configuration
-const rpID = 'mex-node.space'; // Use your domain in production
-const rpName = 'Passkey Backend';
-const expectedOrigin = 'https://mex-node.space'; // Adjust based on your frontend origin
-
 // Generate a random user ID
 function generateUserID() {
   return crypto.randomBytes(16); // Returns a Buffer
 }
+
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get('/clear-user', (req, res) => {
+    users = {};
+    return res.json({ message: 'All users cleared successfully' });
+});
 
 // Registration: Generate options
 app.post('/register/options', async (req, res) => {
