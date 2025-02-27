@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passkey Authenticator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0d1b2a, #1b263b);
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+    }
+    .glow {
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.7), 0 0 30px rgba(34, 211, 238, 0.3);
+    }
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    .float {
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    .stars {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      animation: twinkle 3s infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    .btn-gradient {
+      background: linear-gradient(90deg, #22d3ee, #3b82f6);
+      transition: all 0.3s ease;
+    }
+    .btn-gradient:hover {
+      background: linear-gradient(90deg, #3b82f6, #22d3ee);
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center text-white">
+  <!-- Starry Background -->
+  <div id="stars-container" class="fixed inset-0"></div>
+
+  <!-- Authentication Card -->
+  <div class="relative z-10 bg-gray-800 bg-opacity-90 p-8 rounded-2xl glow pulse max-w-lg w-full">
+    <h1 class="text-5xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">
+      Passkey Authenticator
+    </h1>
+
+    <div class="space-y-6">
+      <input 
+        type="email" 
+        id="username" 
+        placeholder="Enter your email" 
+        class="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white placeholder-gray-500 text-lg"
+      >
+
+      <button 
+        id="register-btn" 
+        class="w-full p-4 btn-gradient rounded-lg text-lg font-semibold float shadow-lg"
+      >
+        Register Passkey
+      </button>
+
+      <button 
+        id="auth-btn" 
+        class="w-full p-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg hover:from-indigo-600 hover:to-purple-500 text-lg font-semibold float shadow-lg transition-all duration-300"
+      >
+        Authenticate with Passkey
+      </button>
+    </div>
+
+    <!-- Status Display -->
+    <div id="status" class="mt-6 text-center text-lg font-medium"></div>
+  </div>
+
+  <script>
+    // Generate twinkling stars
+    const starsContainer = document.getElementById('stars-container');
+    for (let i = 0; i < 150; i++) {
+      const star = document.createElement('div');
+      star.className = 'stars';
+      star.style.left = `${Math.random() * 100}vw`;
+      star.style.top = `${Math.random() * 100}vh`;
+      star.style.animationDelay = `${Math.random() * 3}s`;
+      starsContainer.appendChild(star);
+    }
+
+    // Base64url to ArrayBuffer conversion
+    function base64urlToArrayBuffer(base64url) {
+      const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      const binary = atob(base64);
+      const buffer = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      return buffer.buffer;
+    }
+
+    // ArrayBuffer to base64url conversion
+    function arrayBufferToBase64url(buffer) {
+      const binary = String.fromCharCode(...new Uint8Array(buffer));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    const status = document.getElementById('status');
+    const usernameInput = document.getElementById('username');
+    const registerBtn = document.getElementById('register-btn');
+    const authBtn = document.getElementById('auth-btn');
+    const BASE_URL = 'http://localhost:4000'; // Adjust if deployed
+
+    // Register Passkey
+    registerBtn.addEventListener('click', async () => {
+      const username = usernameInput.value.trim();
+      if (!username) {
+        status.textContent = 'Please enter your email!';
+        status.className = 'text-red-400';
+        return;
+      }
+
+      status.textContent = 'Preparing passkey registration...';
+      status.className = 'text-cyan-400';
+
+      try {
+        const optsResp = await fetch(`${BASE_URL}/register/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const opts = await optsResp.json();
+        if (!optsResp.ok) throw new Error(opts.error || 'Failed to get options');
+
+        opts.challenge = base64urlToArrayBuffer(opts.challenge);
+        opts.user.id = base64urlToArrayBuffer(opts.user.id);
+
+        status.textContent = 'Creating your passkey...';
+        const credential = await navigator.credentials.create({ publicKey: opts });
+
+        const credBody = {
+          id: credential.id,
+          rawId: credential.id,
+          response: {
+            attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
+            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON)
+          },
+          type: credential.type
+        };
+
+        status.textContent = 'Verifying passkey...';
+        const verifyResp = await fetch(`${BASE_URL}/register/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, credential: credBody })
+        });
+        const result = await verifyResp.json();
+
+        if (result.verified) {
+          status.textContent = 'Passkey registered successfully!';
+          status.className = 'text-green-400';
+        } else {
+          throw new Error(result.error || 'Verification failed');
+        }
+      } catch (error) {
+        status.textContent = `Error: ${error.message}`;
+        status.className = 'text-red-400';
+        console.error('Registration error:', error);
+      }
+    });
+
+    // Authenticate with Passkey
+    authBtn.addEventListener('click', async () => {
+      const username = usernameInput.value.trim();
+      if (!username) {
+        status.textContent = 'Please enter your email!';
+        status.className = 'text-red-400';
+        return;
+      }
+
+      status.textContent = 'Preparing authentication...';
+      status.className = 'text-purple-400';
+
+      try {
+        const optsResp = await fetch(`${BASE_URL}/auth/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const opts = await optsResp.json();
+        if (!optsResp.ok) throw new Error(opts.error || 'Failed to get options');
+
+        opts.challenge = base64urlToArrayBuffer(opts.challenge);
+        opts.allowCredentials = opts.allowCredentials.map(cred => ({
+          ...cred,
+          id: base64urlToArrayBuffer(cred.id)
+        }));
+
+        status.textContent = 'Awaiting passkey authentication...';
+        const credential = await navigator.credentials.get({ publicKey: opts });
+
+        const credBody = {
+          id: credential.id,
+          rawId: credential.id,
+          response: {
+            authenticatorData: arrayBufferToBase64url(credential.response.authenticatorData),
+            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+            signature: arrayBufferToBase64url(credential.response.signature),
+            userHandle: credential.response.userHandle ? arrayBufferToBase64url(credential.response.userHandle) : null
+          },
+          type: credential.type
+        };
+
+        status.textContent = 'Verifying authentication...';
+        const verifyResp = await fetch(`${BASE_URL}/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, credential: credBody })
+        });
+        const result = await verifyResp.json();
+
+        if (result.verified) {
+          status.textContent = 'Authentication successful!';
+          status.className = 'text-green-400';
+        } else {
+          throw new Error(result.error || 'Verification failed');
+        }
+      } catch (error) {
+        status.textContent = `Error: ${error.message}`;
+        status.className = 'text-red-400';
+        console.error('Authentication error:', error);
+      }
+    });
+  </script>
+</body>
+</html>
