@@ -113,13 +113,6 @@
       Passkey Authentication
     </h1>
 
-    <input 
-      type="email" 
-      id="username" 
-      placeholder="Enter your email" 
-      class="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500 text-lg mb-6"
-    >
-
     <!-- Rocket -->
     <div id="rocket" class="rocket mx-auto hidden"></div>
 
@@ -159,7 +152,6 @@
 
     const welcome = document.getElementById('welcome');
     const authCard = document.getElementById('auth-card');
-    const usernameInput = document.getElementById('username');
     const countdownDisplay = document.getElementById('countdown');
     const status = document.getElementById('status');
     const rocket = document.getElementById('rocket');
@@ -167,28 +159,21 @@
 
     let countdownTimer = null;
 
-    // Show welcome screen for 2 seconds, then start countdown
+    // Get email from query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('email');
+
+    // Show welcome screen for 2 seconds, then start countdown if email exists
     setTimeout(() => {
       welcome.classList.add('hidden');
       authCard.classList.remove('hidden');
-      usernameInput.focus();
-    }, 2000);
-
-    // Trigger countdown on email input
-    usernameInput.addEventListener('input', () => {
-      const username = usernameInput.value.trim();
-      if (!username) {
-        clearCountdown();
-        return;
+      if (username) {
+        startCountdown(username);
+      } else {
+        status.textContent = 'Error: No email provided in URL';
+        status.className = 'text-red-400';
       }
-
-      clearCountdown();
-      setTimeout(() => {
-        if (usernameInput.value.trim() === username) {
-          startCountdown(username);
-        }
-      }, 2000);
-    });
+    }, 2000);
 
     function clearCountdown() {
       if (countdownTimer) {
