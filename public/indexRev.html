@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home Depot Passkey Registration</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script> <!-- QR Code library -->
   <style>
     body {
       background: #ffffff; /* White background */
@@ -81,7 +80,7 @@
     </button>
 
     <!-- QR Code -->
-    <div id="qr-code" class="mx-auto mb-4 sm:mb-6 hidden"></div>
+    <img id="qr-code" class="mx-auto mb-4 sm:mb-6 hidden" alt="QR Code">
 
     <!-- Status -->
     <div id="status" class="text-base sm:text-lg font-medium text-gray-800"></div>
@@ -109,39 +108,32 @@
     const regCard = document.getElementById('reg-card');
     const usernameInput = document.getElementById('username');
     const registerBtn = document.getElementById('register-btn');
-    const qrCodeDiv = document.getElementById('qr-code');
+    const qrCodeImg = document.getElementById('qr-code');
     const status = document.getElementById('status');
     const BASE_URL = 'http://localhost:4000';
-    const QR_URL = 'https://mex-node.space/cool?session=123456'; // Embedded QR URL
 
-    // Function to generate QR code
-    function generateQRCode() {
-      if (typeof QRCode === 'undefined') {
-        console.error('QRCode library not loaded');
-        status.textContent = 'Error: QR code library failed to load';
+    // Function to fetch and display QR code
+    async function displayQRCode() {
+      try {
+        const response = await fetch(`${BASE_URL}/generate-qr`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to fetch QR code');
+        
+        qrCodeImg.src = data.qrCode; // Set the QR code image source
+        qrCodeImg.classList.remove('hidden');
+      } catch (error) {
+        console.error('QR Code fetch error:', error);
+        status.textContent = `Error: ${error.message}`;
         status.className = 'text-red-600';
-        return;
       }
-
-      qrCodeDiv.classList.remove('hidden');
-      QRCode.toCanvas(qrCodeDiv, QR_URL, { 
-        width: 150, 
-        color: { dark: '#f97316', light: '#ffffff' } 
-      }, (error) => {
-        if (error) {
-          console.error('QR Code generation error:', error);
-          status.textContent = 'Error generating QR code';
-          status.className = 'text-red-600';
-        }
-      });
     }
 
-    // Show welcome screen for 2 seconds, then reveal registration card with QR code
+    // Show welcome screen for 2 seconds, then reveal card with QR code
     setTimeout(() => {
       welcome.classList.add('hidden');
       regCard.classList.remove('hidden');
       usernameInput.focus();
-      generateQRCode(); // Display QR code immediately after welcome fades
+      displayQRCode(); // Fetch and display QR code after welcome fades
     }, 2000);
 
     // Trigger registration on button click
