@@ -91,6 +91,8 @@ app.post('/register/verify', async (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   try {
+    console.log('Incoming credential:', JSON.stringify(credential, null, 2));
+
     const verification = await verifyRegistrationResponse({
       response: credential,
       expectedChallenge: user.currentChallenge,
@@ -98,19 +100,29 @@ app.post('/register/verify', async (req, res) => {
       expectedRPID: rpID,
     });
 
+    console.log('Verification result:', JSON.stringify(verification, null, 2));
+
     if (!verification.verified) {
       return res.status(400).json({ error: 'Registration verification failed' });
     }
 
     const { registrationInfo } = verification;
-    if (!registrationInfo || !registrationInfo.credentialID || !registrationInfo.credentialPublicKey) {
-      throw new Error('Missing required registration info');
+    if (!registrationInfo) {
+      throw new Error('No registrationInfo returned from verification');
+    }
+
+    const credentialID = registrationInfo.credentialID || Buffer.from(credential.rawId, 'base64url');
+    const credentialPublicKey = registrationInfo.credentialPublicKey;
+    const counter = registrationInfo.counter ?? 0;
+
+    if (!credentialID || !credentialPublicKey) {
+      throw new Error('Missing credentialID or credentialPublicKey in registration info');
     }
 
     const device = {
-      credentialID: registrationInfo.credentialID,
-      credentialPublicKey: registrationInfo.credentialPublicKey,
-      counter: registrationInfo.counter ?? 0, // Ensure counter is always a number
+      credentialID,
+      credentialPublicKey,
+      counter,
       transports: credential.response.transports || ['internal']
     };
 
