@@ -87,37 +87,50 @@ app.post('/register/verify', async (req, res) => {
       });
   
       if (verification.verified) {
-        // Examine the ENTIRE verification object to see where the credential data actually is
-        console.log('Complete verification object structure:', JSON.stringify(verification, (key, value) => {
-          if (value instanceof Uint8Array) {
-            return `Uint8Array(${value.length})`;
-          }
-          return value;
-        }, 2));
+        // Log the exact structure of the verification object
+        console.log('Registration info keys:', Object.keys(verification.registrationInfo));
         
-        // The @simplewebauthn/server library stores the credential ID in the registrationInfo object
-        // Access the correct properties based on the actual structure
-        if (!verification.registrationInfo) {
-          throw new Error('Registration info missing in verification result');
+        // Different versions of the library may use different property names
+        // Try all possible property paths
+        const registrationInfo = verification.registrationInfo;
+        
+        // Get the credential ID directly from the client data if needed
+        const credentialID = registrationInfo.credentialID || 
+                            registrationInfo.credential?.id ||
+                            credential.id || 
+                            Buffer.from(credential.rawId, 'base64url');
+                            
+        const credentialPublicKey = registrationInfo.credentialPublicKey || 
+                                   registrationInfo.credential?.publicKey ||
+                                   registrationInfo.publicKey;
+                                   
+        const counter = registrationInfo.counter || 0;
+        
+        console.log('Extracted credential values (new method):');
+        console.log('- credentialID present:', !!credentialID);
+        console.log('- credentialPublicKey present:', !!credentialPublicKey);
+        console.log('- counter:', counter);
+        
+        if (!credentialID || !credentialPublicKey) {
+          // If we still can't find credential data, log the entire verification object
+          console.log('Full verification object structure:', JSON.stringify(verification, null, 2));
+          throw new Error('Missing credential data in verification result');
         }
         
-        // Store credential securely - use the raw data format from the verification object
+        // Store credential - ensure Buffer conversion for binary data
         user.devices.push({
-          // Store these values directly without conversion if already in correct format
-          credentialID: verification.registrationInfo.credentialID,
-          credentialPublicKey: verification.registrationInfo.credentialPublicKey,
-          counter: verification.registrationInfo.counter || 0,
-          // Get transports from credential if available
+          // Make sure these are Buffers for proper storage and comparison
+          credentialID: Buffer.isBuffer(credentialID) ? credentialID : Buffer.from(credentialID),
+          credentialPublicKey: Buffer.isBuffer(credentialPublicKey) ? credentialPublicKey : Buffer.from(credentialPublicKey),
+          counter,
           transports: credential.response.transports || []
         });
         
-        // Log the device that was actually stored to confirm its structure
-        console.log('Stored device:', {
-          credentialIDExists: !!user.devices[0].credentialID,
-          credentialIDType: typeof user.devices[0].credentialID,
-          credentialIDBuffer: Buffer.isBuffer(user.devices[0].credentialID),
-          credentialPublicKeyExists: !!user.devices[0].credentialPublicKey
-        });
+        // Extra validation to confirm storage
+        console.log('Device stored info:');
+        console.log('- Device count:', user.devices.length);
+        console.log('- credentialID stored as Buffer:', Buffer.isBuffer(user.devices[0].credentialID));
+        console.log('- credentialPublicKey stored as Buffer:', Buffer.isBuffer(user.devices[0].credentialPublicKey));
         
         delete user.currentChallenge;
         res.json({ verified: true });
@@ -129,6 +142,7 @@ app.post('/register/verify', async (req, res) => {
       res.status(500).json({ error: 'Verification error: ' + error.message });
     }
 });
+
 // Authentication: Generate options
 app.post('/auth/options', async (req, res) => {
     const { username } = req.body;
