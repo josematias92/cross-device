@@ -347,7 +347,7 @@ app.post('/auth/verify', async (req, res) => {
 
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, "public" ,'index.html'));
+  res.sendFile(path.join(__dirname, "public" ,'indexRev.html'));
 });
 
 app.get('/cool', (req, res) => {
