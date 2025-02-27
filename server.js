@@ -63,6 +63,7 @@ app.post('/register/options', async (req, res) => {
 });
 
 // Registration: Verify response
+// Registration: Verify response
 app.post('/register/verify', async (req, res) => {
     const { username, credential } = req.body;
     if (!username || !credential) {
@@ -75,6 +76,9 @@ app.post('/register/verify', async (req, res) => {
     }
   
     try {
+      // Add detailed logging of the credential object
+      console.log('Incoming credential structure:', JSON.stringify(credential, null, 2));
+      
       const verification = await verifyRegistrationResponse({
         response: credential,
         expectedChallenge: user.currentChallenge,
@@ -83,23 +87,35 @@ app.post('/register/verify', async (req, res) => {
       });
   
       if (verification.verified) {
-        // Log the complete registration info
-        console.log('Full registration info:', JSON.stringify(verification.registrationInfo, null, 2));
+        // Log the complete registration info with more detail
+        console.log('Full verification object:', verification);
+        console.log('Registration info:', verification.registrationInfo);
+        
+        // Extract the credentials safely with fallbacks
+        const credentialID = verification.registrationInfo?.credentialID;
+        const credentialPublicKey = verification.registrationInfo?.credentialPublicKey;
+        const counter = verification.registrationInfo?.counter || 0;
+        
+        console.log('Extracted credential values:');
+        console.log('- credentialID present:', !!credentialID);
+        console.log('- credentialPublicKey present:', !!credentialPublicKey);
+        console.log('- counter:', counter);
+        
+        // Only proceed if we have the necessary credential data
+        if (!credentialID || !credentialPublicKey) {
+          throw new Error('Missing credential data in verification result');
+        }
         
         // Store credential with proper Buffer conversion for binary data
-        const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
-        
-        // Make sure all data is properly stored
         user.devices.push({
-          // Ensure credentialID is stored as a Buffer
           credentialID: Buffer.from(credentialID),
-          // Ensure credentialPublicKey is stored as a Buffer
           credentialPublicKey: Buffer.from(credentialPublicKey),
           counter,
           transports: credential.response.transports || []
         });
         
-        console.log('Device after storage:', JSON.stringify(user.devices[0], null, 2));
+        // Verify the device was stored correctly
+        console.log('Device stored successfully:', user.devices[0].credentialID !== undefined);
         
         delete user.currentChallenge;
         res.json({ verified: true });
@@ -108,7 +124,7 @@ app.post('/register/verify', async (req, res) => {
       }
     } catch (error) {
       console.error('Error verifying registration:', error);
-      res.status(500).json({ error: 'Verification error' });
+      res.status(500).json({ error: 'Verification error: ' + error.message });
     }
 });
 
