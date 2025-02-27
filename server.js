@@ -43,6 +43,21 @@ app.get('/clear-user', (req, res) => {
     return res.json({ message: 'All users cleared successfully' });
 });
 
+app.get('/debug/credentials/:username', (req, res) => {
+  const username = req.params.username;
+  if (!users[username]) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  const debugInfo = users[username].devices.map(device => ({
+    credentialIDHex: device.credentialID.toString('hex'),
+    credentialIDBase64: device.credentialID.toString('base64'),
+    credentialIDBase64url: device.credentialID.toString('base64url')
+  }));
+  
+  res.json(debugInfo);
+});
+
 // Registration: Generate options
 app.post('/register/options', async (req, res) => {
   const { username } = req.body;
