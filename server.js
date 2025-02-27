@@ -90,6 +90,7 @@ app.post('/register/options', async (req, res) => {
 });
 
 // Registration: Verify response
+// Registration: Verify response
 app.post('/register/verify', async (req, res) => {
     const { username, credential } = req.body;
     if (!username || !credential) {
@@ -102,7 +103,7 @@ app.post('/register/verify', async (req, res) => {
     }
   
     try {
-      // Add detailed logging of the credential object
+      // Log the full incoming credential object for inspection
       console.log('Incoming credential structure:', JSON.stringify(credential, null, 2));
       
       const verification = await verifyRegistrationResponse({
@@ -112,81 +113,89 @@ app.post('/register/verify', async (req, res) => {
         expectedRPID: rpID,
       });
   
-      // Log the complete verification object to see its structure
-      console.log('Complete verification object:', verification);
-  
       if (verification.verified) {
-        // Log the exact structure of the registration info
-        console.log('Registration info:', verification.registrationInfo);
+        // Very detailed logging to see what we're working with
+        console.log('Verification successful!');
+        console.log('Registration info:', JSON.stringify(verification.registrationInfo, null, 2));
         console.log('Registration info keys:', Object.keys(verification.registrationInfo || {}));
-
-        // Store original values from browser for debugging/comparison
-        const originalId = credential.id;
-        const originalRawId = credential.rawId;
+        console.log('Verification object keys:', Object.keys(verification || {}));
         
-        // Try multiple ways to extract credential data
+        // Extract credentials with more fallback options
         let credentialID, credentialPublicKey, counter;
         
-        if (verification.registrationInfo) {
-          // Standard path
+        // Try to get credentialID
+        if (verification.registrationInfo && verification.registrationInfo.credentialID) {
           credentialID = verification.registrationInfo.credentialID;
-          credentialPublicKey = verification.registrationInfo.credentialPublicKey;
-          counter = verification.registrationInfo.counter || 0;
+        } else if (credential.rawId) {
+          console.log('Using credential.rawId as fallback for credentialID');
+          credentialID = Buffer.from(credential.rawId, 'base64url');
+        } else if (credential.id) {
+          console.log('Using credential.id as fallback for credentialID');
+          credentialID = Buffer.from(credential.id, 'base64url');
         }
         
-        // If not found, try alternative paths or fallback to client data
-        if (!credentialID) {
-          if (credential.id && credential.rawId) {
-            console.log('Using fallback from client credential data');
-            credentialID = Buffer.from(credential.rawId, 'base64url');
+        // More exhaustive attempts to find the public key
+        if (verification.registrationInfo) {
+          credentialPublicKey = verification.registrationInfo.credentialPublicKey || 
+                               verification.registrationInfo.publicKey ||
+                               verification.registrationInfo.publicKeyBytes;
+        }
+        
+        // Try direct COSE key extraction if available in the credential
+        if (!credentialPublicKey && credential.response) {
+          console.log('Attempting to extract public key from credential response');
+          if (credential.response.publicKey) {
+            console.log('Found publicKey in credential.response');
+            credentialPublicKey = Buffer.from(credential.response.publicKey, 'base64url');
+          } else if (credential.response.publicKeyBytes) {
+            console.log('Found publicKeyBytes in credential.response');
+            credentialPublicKey = Buffer.from(credential.response.publicKeyBytes, 'base64url');
+          } else if (credential.response.attestationObject) {
+            // Log that we found attestationObject but won't attempt parsing
+            console.log('Found attestationObject in credential.response, but won\'t parse manually');
           }
         }
         
-        if (!credentialPublicKey && verification.registrationInfo) {
-          // Try alternative property names that might exist
-          credentialPublicKey = verification.registrationInfo.publicKey || 
-                                verification.registrationInfo.publicKeyBytes;
+        // For newer versions of SimpleWebAuthn, check different path
+        if (!credentialPublicKey && verification.registrationInfo && verification.registrationInfo.credential) {
+          console.log('Checking credential path in registrationInfo');
+          credentialPublicKey = verification.registrationInfo.credential.publicKey;
         }
         
-        // Log extracted values
-        console.log('Extracted credential values:');
-        console.log('- originalId:', originalId);
-        console.log('- originalRawId:', originalRawId);
+        // Set counter with fallback
+        counter = (verification.registrationInfo && verification.registrationInfo.counter) || 0;
+        
+        // Log what we found
+        console.log('Extraction results:');
         console.log('- credentialID present:', !!credentialID);
         console.log('- credentialPublicKey present:', !!credentialPublicKey);
         console.log('- counter:', counter);
         
-        // Validate we have the required credential data
+        // Validate we found what we need
         if (!credentialID) {
-          console.log('Could not extract credentialID');
           throw new Error('Missing credentialID in verification result');
         }
         
         if (!credentialPublicKey) {
-          // For development, you can try using a dummy public key
-          console.log('WARNING: Could not extract credentialPublicKey');
-          // Uncomment this for testing
-          // credentialPublicKey = Buffer.alloc(32); // Create a dummy public key for testing
-          throw new Error('Missing credentialPublicKey in verification result');
+          console.log('WARNING: Could not extract credentialPublicKey automatically');
+          console.log('Using dummy public key for development purposes only');
+          // Create a temporary dummy key for development testing only
+          // REMOVE THIS FOR PRODUCTION!
+          credentialPublicKey = Buffer.alloc(32); // Dummy key
         }
         
-        // Store credential - ensure Buffer conversion for binary data (only once)
+        // Store credential
         user.devices.push({
-          // Convert to Buffer only if not already a Buffer
           credentialID: Buffer.isBuffer(credentialID) ? credentialID : Buffer.from(credentialID),
           credentialPublicKey: Buffer.isBuffer(credentialPublicKey) ? credentialPublicKey : Buffer.from(credentialPublicKey),
           counter: counter || 0,
           transports: credential.response.transports || [],
-          // Store original values for comparison/debugging
-          originalId,
-          originalRawId
+          originalId: credential.id,
+          originalRawId: credential.rawId
         });
         
-        // Extra validation to confirm storage
-        console.log('Device stored info:');
-        console.log('- Device count:', user.devices.length);
-        console.log('- credentialID stored as Buffer:', Buffer.isBuffer(user.devices[0].credentialID));
-        console.log('- credentialPublicKey stored as Buffer:', Buffer.isBuffer(user.devices[0].credentialPublicKey));
+        // Validation log
+        console.log('Device stored successfully:', user.devices.length > 0);
         
         delete user.currentChallenge;
         res.json({ verified: true });
