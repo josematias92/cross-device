@@ -71,13 +71,12 @@ app.post('/register/options', async (req, res) => {
   let user = users[username];
   let userID;
 
-  // If user doesn't exist, create a new one
   if (!user) {
     userID = generateUserID();
     users[username] = { id: userID, username, devices: [] };
     user = users[username];
   } else {
-    userID = user.id; // Use existing userID
+    userID = user.id;
   }
 
   try {
@@ -88,10 +87,9 @@ app.post('/register/options', async (req, res) => {
       userName: username,
       attestationType: 'none',
       authenticatorSelection: { userVerification: 'preferred' },
-      // Optional: Exclude existing credentials to prevent duplicate registration
       excludeCredentials: user.devices.map(device => ({
-        id: device.credentialID,
-        type: 'public-key'
+        id: device.credentialID, // Assumes base64 string; adjust if needed
+        type: 'public-key',
       })),
     });
 
