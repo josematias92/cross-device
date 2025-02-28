@@ -126,7 +126,6 @@ app.post('/register/verify', async (req, res) => {
   }
 });
 
-
 // Authentication: Generate options
 app.post('/auth/options', async (req, res) => {
     const { username } = req.body;
@@ -139,37 +138,34 @@ app.post('/auth/options', async (req, res) => {
     }
   
     const user = users[username];
-    if (!user || !user.devices.length) {
+    if (!user || !user.passkeys.length) {
       return res.status(404).json({ error: 'User or passkey not found' });
     }
   
     try {
       // Enhanced error logging to help diagnose the issue
       console.log(`Generating auth options for user ${username}`);
-      console.log(`User has ${user.devices.length} registered device(s)`);
+      console.log(`User has ${user.passkeys.length} registered passkey(s)`);
       
-      const allowCredentials = user.devices.map(device => {
+      const allowCredentials = user.passkeys.map(passkey => {
         // Improved logging
-        console.log('Device:', device);
-        console.log(`Credential ID exists: ${!!device.credentialID}`);
+        console.log('Passkey:', passkey);
+        console.log(`Credential ID exists: ${!!passkey.credentialID}`);
 
-        if (!device.credentialID) {
-          throw new Error('Missing credentialID in stored device');
+        if (!passkey.credentialID) {
+          throw new Error('Missing credentialID in stored passkey');
         }
 
-        // Convert Buffer to base64url string format which is what the library expects
-        //const credentialIDBase64 = device.credentialID.toString('base64url');
-        //const credentialIDBase64 = Buffer.from(device.credentialID).toString('base64url');
-        const credentialIDBase64 = device.credentialID.toString('base64url');
+        const credentialIDBase64 = passkey.credentialID.toString('base64url');
         console.log('Credential ID as base64url:', credentialIDBase64);
 
-        console.log('Original credential ID (hex):', device.credentialID.toString('hex'));
+        console.log('Original credential ID (hex):', passkey.credentialID.toString('hex'));
         console.log('Credential ID as base64url:', credentialIDBase64);
         
         return {
           id: credentialIDBase64, // Use base64url string instead of raw Buffer
           type: 'public-key',
-          transports: device.transports || ['internal', 'usb', 'ble', 'nfc'],
+          transports: passkey.transports || ['internal', 'usb', 'ble', 'nfc'],
         };
       });
       
@@ -190,7 +186,6 @@ app.post('/auth/options', async (req, res) => {
     }
 });
 
-
 // Authentication: Verify response
 app.post('/auth/verify', async (req, res) => {
   const { username, credential } = req.body;
@@ -199,7 +194,7 @@ app.post('/auth/verify', async (req, res) => {
   }
 
   const user = users[username];
-  if (!user || !user.devices.length) {
+  if (!user || !user.passkeys.length) {
     return res.status(404).json({ error: 'User or passkey not found' });
   }
 
@@ -208,9 +203,9 @@ app.post('/auth/verify', async (req, res) => {
     console.log('Current challenge:', user.currentChallenge);
 
     let matches = false;
-    const authenticator = user.devices.find(device => {
-      matches = device.credentialID.equals(Buffer.from(credential.id, 'base64url'));
-      console.log(`Comparing: ${device.credentialID.toString('base64url')} with ${credential.id}, matches: ${matches}`);
+    const authenticator = user.passkeys.find(passkey => {
+      matches = passkey.credentialID.equals(Buffer.from(credential.id, 'base64url'));
+      console.log(`Comparing: ${passkey.credentialID.toString('base64url')} with ${credential.id}, matches: ${matches}`);
       sessions[username] = true
       return matches;
     });
@@ -220,40 +215,7 @@ app.post('/auth/verify', async (req, res) => {
       return res.status(400).json({ error: 'Passkey not recognized' });
     }
 
-    // console.log('Found authenticator:', JSON.stringify(authenticator, null, 2));
-
-    //**
-    //if (!authenticator.credentialPublicKey || !Buffer.isBuffer(authenticator.credentialPublicKey)) {
-    //  console.log('Missing or invalid credentialPublicKey');
-    //  return res.status(500).json({ error: 'Invalid authenticator data: missing public key' });
-    //}
-    //** 
-
-    //const authForVerification = {
-      //credentialID: authenticator.credentialID,
-      //credentialPublicKey: authenticator.credentialPublicKey,
-      //counter: typeof authenticator.counter === 'number' ? authenticator.counter : 0
-    //};
-
-    //if (authenticator.transports && Array.isArray(authenticator.transports)) {
-      //authForVerification.transports = authenticator.transports;
-    //}
-
-    // console.log('authForVerification:', JSON.stringify(authForVerification, null, 2));
-
-    //const verification = await verifyAuthenticationResponse({
-      //response: credential,
-      //expectedChallenge: user.currentChallenge,
-      //expectedOrigin,
-      //expectedRPID: rpID,
-      //authenticator: authForVerification,
-      //requireUserVerification: false
-    //});
-
     if (matches) {
-      //console.log('Authentication successful!');
-      //console.log('New counter value:', verification.authenticationInfo.newCounter);
-      //authenticator.counter = verification.authenticationInfo.newCounter || 0;
       delete user.currentChallenge;
       res.json({ verified: true });
     } else {
