@@ -67,12 +67,18 @@ app.post('/register/options', async (req, res) => {
   if (!username) {
     return res.status(400).json({ error: 'Username is required' });
   }
-  if (users[username]) {
-    return res.status(400).json({ error: 'Username already exists' });
-  }
 
-  const userID = generateUserID();
-  users[username] = { id: userID, username, devices: [] };
+  let user = users[username];
+  let userID;
+
+  // If user doesn't exist, create a new one
+  if (!user) {
+    userID = generateUserID();
+    users[username] = { id: userID, username, devices: [] };
+    user = users[username];
+  } else {
+    userID = user.id; // Use existing userID
+  }
 
   try {
     const options = await generateRegistrationOptions({
@@ -82,9 +88,14 @@ app.post('/register/options', async (req, res) => {
       userName: username,
       attestationType: 'none',
       authenticatorSelection: { userVerification: 'preferred' },
+      // Optional: Exclude existing credentials to prevent duplicate registration
+      excludeCredentials: user.devices.map(device => ({
+        id: device.credentialID,
+        type: 'public-key'
+      })),
     });
 
-    users[username].currentChallenge = options.challenge;
+    user.currentChallenge = options.challenge;
     res.json(options);
   } catch (error) {
     console.error('Error generating registration options:', error);
