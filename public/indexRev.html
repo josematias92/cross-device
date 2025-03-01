@@ -224,6 +224,16 @@
         console.error('Registration error:', error);
       }
     }
+    
+    const emailInput = document.getElementById('username');
+    emailInput.addEventListener('input', () => {
+      const email = emailInput.value.trim();
+      if (email) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('email', email);
+        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+      }
+    });
   </script>
 </body>
 </html>
