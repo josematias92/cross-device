@@ -105,6 +105,7 @@
             const response = await fetch(urlWithParams);
             const data = await response.json();
             if (data.success) {
+              localStorage.setItem("secondary", data.secondary)
               window.location.href = `${BASE_URL}/usersLocation`;
             }
           } catch (error) {
