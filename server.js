@@ -188,7 +188,7 @@ app.post('/auth/options', async (req, res) => {
 
 // Authentication: Verify response
 app.post('/auth/verify', async (req, res) => {
-  const { username, credential } = req.body;
+  const { username, credential, secondaryDeviceDetails } = req.body;
   if (!username || !credential) {
     return res.status(400).json({ error: 'Username and credential are required' });
   }
@@ -217,7 +217,7 @@ app.post('/auth/verify', async (req, res) => {
 
     if (matches) {
       delete user.currentChallenge;
-      res.json({ verified: true });
+      res.json({ verified: true, secondaryDevice: secondaryDeviceDetails });
     } else {
       res.status(400).json({ error: 'Verification failed' });
     }
