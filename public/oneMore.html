@@ -13,14 +13,14 @@
       font-family: 'Arial', sans-serif;
     }
     .glow {
-      box-shadow: 0 0 15px rgba(34, 211, 238, 0.7), 0 0 30px rgba(34, 211, 238, 0.3);
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.7), 0 0 30px rgba(249, 115, 22, 0.3);
     }
     .pulse {
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
       0% { transform: scale(1); }
-      50% { transform: scale(1.03); }
+      50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
     .stars {
@@ -34,53 +34,6 @@
     @keyframes twinkle {
       0%, 100% { opacity: 0.3; }
       50% { opacity: 1; }
-    }
-    .rocket {
-      width: 50px;
-      height: 80px;
-      background: linear-gradient(180deg, #f97316, #ffffff);
-      border-radius: 50% 50% 10% 10%;
-      position: relative;
-      animation: launch 4s ease-in-out forwards;
-    }
-    .rocket::before {
-      content: '';
-      position: absolute;
-      bottom: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 15px;
-      height: 15px;
-      background: #f97316;
-      border-radius: 50%;
-      animation: flame 0.5s infinite alternate;
-    }
-    @media (max-width: 640px) {
-      .rocket {
-        width: 40px;
-        height: 60px;
-      }
-      .rocket::before {
-        bottom: -10px;
-        width: 10px;
-        height: 10px;
-      }
-    }
-    @keyframes launch {
-      0% { transform: translateY(80px); }
-      50% { transform: translateY(-15px); }
-      100% { transform: translateY(-150px) translateX(-40px); }
-    }
-    @media (max-width: 640px) {
-      @keyframes launch {
-        0% { transform: translateY(60px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(-100px) translateX(-30px); }
-      }
-    }
-    @keyframes flame {
-      0% { transform: translateX(-50%) scale(1); opacity: 0.8; }
-      100% { transform: translateX(-50%) scale(1.2); opacity: 1; }
     }
     .welcome-screen {
       position: fixed;
@@ -112,9 +65,6 @@
     <h1 class="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
       Passkey Authentication
     </h1>
-
-    <!-- Rocket -->
-    <div id="rocket" class="rocket mx-auto hidden"></div>
 
     <!-- Countdown and Status -->
     <div id="countdown" class="text-3xl font-bold text-orange-400 mb-4"></div>
@@ -154,7 +104,6 @@
     const authCard = document.getElementById('auth-card');
     const countdownDisplay = document.getElementById('countdown');
     const status = document.getElementById('status');
-    const rocket = document.getElementById('rocket');
     const BASE_URL = 'https://mex-node.space';
 
     let countdownTimer = null;
@@ -182,14 +131,11 @@
       }
       countdownDisplay.textContent = '';
       status.textContent = '';
-      rocket.classList.add('hidden');
-      rocket.style.animation = 'launch 4s ease-in-out forwards'; // Reset animation
     }
 
     function startCountdown(username) {
       let count = 4;
       countdownDisplay.textContent = `Authenticating in ${count}...`;
-      rocket.classList.remove('hidden');
 
       countdownTimer = setInterval(async () => {
         count--;
@@ -249,7 +195,6 @@
         if (result.verified) {
           status.textContent = 'Welcome back to The Home Depot!';
           status.className = 'text-green-400';
-          rocket.style.animation = 'none'; // Stop rocket on success
         } else {
           throw new Error(result.error || 'Verification failed');
         }
@@ -257,7 +202,6 @@
         status.textContent = `Error: ${error.message}`;
         status.className = 'text-red-400';
         console.error('Authentication error:', error);
-        rocket.style.animation = 'none'; // Stop rocket on error
       }
     }
   </script>
