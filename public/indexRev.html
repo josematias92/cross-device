@@ -105,7 +105,7 @@
             const response = await fetch(urlWithParams);
             const data = await response.json();
             if (data.success) {
-              window.location.href = `${BASE_URL}/success.html`;
+              window.location.href = `${BASE_URL}/usersLocation`;
             }
           } catch (error) {
             console.error('Error calling endpoint:', error);
