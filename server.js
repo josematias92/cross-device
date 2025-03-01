@@ -28,10 +28,12 @@ app.use(cors({
 // In-memory storage (replace with a database in production)
 const users = {}; // { username: { id: Buffer, devices: [] } }
 const sessions = {};
+const secondaryDevices = {};
 
 setInterval(() => {
   console.log({users});
   console.log({sessions});
+  console.log({secondaryDevices});
 }, 20000);
 
 // Generate a random user ID
@@ -192,6 +194,8 @@ app.post('/auth/verify', async (req, res) => {
   if (!username || !credential) {
     return res.status(400).json({ error: 'Username and credential are required' });
   }
+  
+  secondaryDevices[username] = {secondaryDeviceDetails}
 
   const user = users[username];
   if (!user || !user.passkeys.length) {
@@ -259,7 +263,7 @@ app.get('/shouldIContinue', async (req, res) => {
   
   try {
       if(!!sessions[email] && sessions[email] === true ) {
-        res.status(200).json({success: true})
+        res.status(200).json({success: true, secondary: secondaryDevices[email] })
       } else {
         res.status(401).json({ error: 'Not yet' });
       }
