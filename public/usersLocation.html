@@ -152,7 +152,7 @@
     function displayDeviceDetails() {
       const storedDetails = localStorage.getItem('secondary');
       if (storedDetails) {
-        const details = JSON.parse(storedDetails);
+        const details = JSON.parse(storedDetails)?.secondaryDeviceDetails
         let html = '';
         for (const [key, value] of Object.entries(details)) {
           html += `<p><strong>${key.replace(/([A-Z])/g, ' $1').toLowerCase()}:</strong> ${value}</p>`;
