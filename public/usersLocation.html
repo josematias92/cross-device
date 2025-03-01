@@ -11,7 +11,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
       background-color: #f5f5f5;
       font-family: 'Arial', sans-serif;
@@ -21,9 +21,9 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      text-align: center;
-      max-width: 500px;
+      max-width: 1000px;
       width: 100%;
+      text-align: center;
     }
     #header {
       background-color: #f96302; /* Home Depot Orange */
@@ -34,17 +34,50 @@
       border-radius: 8px 8px 0 0;
       margin: -20px -20px 20px -20px;
     }
+    #content {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    #map-container {
+      flex: 1;
+      text-align: center;
+    }
     #map {
       width: 400px;
       height: 400px;
       border: 2px solid #f96302;
       border-radius: 4px;
-      margin: 0 auto 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     #status {
       font-size: 1.1em;
       color: #333;
       margin-bottom: 15px;
+    }
+    #device-details-container {
+      flex: 1;
+      text-align: left;
+    }
+    #device-details {
+      font-size: 0.9em;
+      color: #333;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 2px solid #f96302;
+      border-radius: 4px;
+      padding: 15px;
+      background-color: #fff8f0; /* Light orange tint */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #device-details p {
+      margin: 5px 0;
+    }
+    #device-details-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #f96302;
+      margin-bottom: 10px;
     }
     #prompt {
       display: none;
@@ -81,8 +114,16 @@
 <body>
   <div id="container">
     <div id="header">The Home Depot</div>
-    <div id="status">Fetching your location...</div>
-    <div id="map"></div>
+    <div id="content">
+      <div id="map-container">
+        <div id="status">Fetching your location...</div>
+        <div id="map"></div>
+      </div>
+      <div id="device-details-container">
+        <div id="device-details-title">Device Details</div>
+        <div id="device-details"></div>
+      </div>
+    </div>
     <div id="prompt">
       Another Device is trying to access your account using a passkey.<br>
       Is this you? 🧐<br>
@@ -96,6 +137,7 @@
     // Initialize the map
     const map = L.map('map');
     const status = document.getElementById('status');
+    const deviceDetailsDiv = document.getElementById('device-details');
     const prompt = document.getElementById('prompt');
     const yesBtn = document.getElementById('yes-btn');
     const noBtn = document.getElementById('no-btn');
@@ -105,6 +147,21 @@
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
     }).addTo(map);
+
+    // Function to display device details from localStorage
+    function displayDeviceDetails() {
+      const storedDetails = localStorage.getItem('userDetails');
+      if (storedDetails) {
+        const details = JSON.parse(storedDetails);
+        let html = '';
+        for (const [key, value] of Object.entries(details)) {
+          html += `<p><strong>${key.replace(/([A-Z])/g, ' $1').toLowerCase()}:</strong> ${value}</p>`;
+        }
+        deviceDetailsDiv.innerHTML = html;
+      } else {
+        deviceDetailsDiv.textContent = 'No device details found in localStorage.';
+      }
+    }
 
     // Function to set map to user's location and show prompt
     function displayLocation(position) {
@@ -118,7 +175,7 @@
       // Show the security prompt after a brief delay
       setTimeout(() => {
         prompt.style.display = 'block';
-      }, 1000); // Delay for UX, adjust as needed
+      }, 1000); // Delay for UX
     }
 
     // Handle geolocation errors
@@ -138,7 +195,7 @@
       status.textContent = errorMessage;
     }
 
-    // Button handlers (placeholders for now)
+    // Button handlers
     yesBtn.addEventListener('click', () => {
       alert('Access granted. Welcome back!');
       prompt.style.display = 'none';
@@ -148,7 +205,7 @@
       prompt.style.display = 'none';
     });
 
-    // Request user's location
+    // Request user's location and display device details
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(displayLocation, handleError, {
         enableHighAccuracy: true,
@@ -158,6 +215,9 @@
     } else {
       status.textContent = 'Geolocation is not supported by your browser.';
     }
+
+    // Display device details from localStorage on page load
+    displayDeviceDetails();
   </script>
 </body>
 </html>
