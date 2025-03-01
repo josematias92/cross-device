@@ -288,6 +288,10 @@ app.get('/cool', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'oneMore.html'));
 });
 
+app.get('/usersLocation', (req, res) => {
+  res.sendFile(path.join(__dirname, "public" ,'usersLocation.html'));
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
