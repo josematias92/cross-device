@@ -134,6 +134,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    const BASE_URL = 'https://mex-node.space';
+    
     // Initialize the map
     const map = L.map('map');
     const status = document.getElementById('status');
@@ -197,7 +199,7 @@
 
     // Button handlers
     yesBtn.addEventListener('click', () => {
-      alert('Access granted. Welcome back!');
+      window.location.href = `${BASE_URL}/success`;
       prompt.style.display = 'none';
     });
     noBtn.addEventListener('click', () => {
