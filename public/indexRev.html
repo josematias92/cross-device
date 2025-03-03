@@ -85,6 +85,9 @@
     <!-- Status -->
     <div id="status" class="text-base sm:text-lg font-medium text-gray-800"></div>
     <h3>Scan this QR code with a device that has a registered passkey.</h3>
+
+    <!-- Countdown Timer -->
+    <p id="countdown" class="text-lg font-semibold text-red-600"></p>
   </div>
 
   <script>
@@ -137,10 +140,13 @@
     const registerBtn = document.getElementById('register-btn');
     const qrCodeImg = document.getElementById('qr-code');
     const status = document.getElementById('status');
+    const countdown = document.getElementById('countdown');
     
 
     // Function to fetch and display QR code
+    
     async function displayQRCode() {
+      
       const urlParams = new URLSearchParams(window.location.search);
       const email = urlParams.get('email') || ''; // Retrieve the email query parameter
       
@@ -151,6 +157,7 @@
         
         qrCodeImg.src = data.qrCode; // Set the QR code image source
         qrCodeImg.classList.remove('hidden');
+        startCountdown(30)
       } catch (error) {
         console.error('QR Code fetch error:', error);
         status.textContent = `Error: ${error.message}`;
@@ -159,12 +166,15 @@
     }
 
     // Show welcome screen for 2 seconds, then reveal card with QR code
+   
     setTimeout(() => {
       welcome.classList.add('hidden');
       regCard.classList.remove('hidden');
       usernameInput.focus();
       displayQRCode(); // Fetch and display QR code after welcome fades
     }, 2000);
+
+     
 
     // Trigger registration on button click
     registerBtn.addEventListener('click', () => {
@@ -237,6 +247,20 @@
         window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
       }
     });
+
+    // Function to start the countdown timer
+    function startCountdown(seconds) {
+      let remainingTime = seconds;
+      const interval = setInterval(() => {
+        countdown.textContent = `Time remaining: ${remainingTime} seconds`;
+        remainingTime--;
+        if (remainingTime < 0) {
+          clearInterval(interval);
+          // countdown.textContent = 'Time is up!';
+          displayQRCode()
+        }
+      }, 1000);
+    }
   </script>
 </body>
 </html>
