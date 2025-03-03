@@ -145,13 +145,13 @@
 
     // Function to fetch and display QR code
     
-    async function displayQRCode() {
+    async function displayQRCode(randomSession) {
       
       const urlParams = new URLSearchParams(window.location.search);
       const email = urlParams.get('email') || ''; // Retrieve the email query parameter
       
       try {
-        const response = await fetch(`${BASE_URL}/generate-qr?email=${email}`);
+        const response = await fetch(`${BASE_URL}/generate-qr?email=${email}&session=${randomSession}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to fetch QR code');
         
@@ -166,12 +166,17 @@
     }
 
     // Show welcome screen for 2 seconds, then reveal card with QR code
+
+    function generateRandom4DigitString() {
+      return Math.floor(1000 + Math.random() * 9000).toString();
+    }
    
     setTimeout(() => {
       welcome.classList.add('hidden');
       regCard.classList.remove('hidden');
       usernameInput.focus();
-      displayQRCode(); // Fetch and display QR code after welcome fades
+      const session = generateRandom4DigitString()
+      displayQRCode(session); // Fetch and display QR code after welcome fades
     }, 2000);
 
      
@@ -257,7 +262,8 @@
         if (remainingTime < 0) {
           clearInterval(interval);
           // countdown.textContent = 'Time is up!';
-          displayQRCode()
+          const session = generateRandom4DigitString();
+          displayQRCode(session);
         }
       }, 1000);
     }
