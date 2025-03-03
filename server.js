@@ -200,10 +200,15 @@ app.post('/auth/verify', async (req, res) => {
   secondaryDevices[username] = {secondaryDeviceDetails}
   
   let activeSessionVerified = false;
-  if(!!activeSessions[username]) {
+  if(!!activeSessions[username] && activeSessions[username].length > 0) {
     console.log(activeSessions[username], session, "1STORED & 2Payload")
     console.log("Session verification:", activeSessions[username] === session)
-    activeSessionVerified = activeSessions[username] === session
+
+    if(activeSessions[username].includes(session)) {
+      activeSessionVerified = true
+      activeSessions[username] = true
+    }
+    
   }
 
   const user = users[username];
@@ -250,7 +255,8 @@ app.get('/generate-qr', async (req, res) => {
   const email = req.query.email;
   const session = req.query.session;
 
-  activeSessions[email] = session
+  activeSessions[email] = [];
+  activeSessions[email].push(session);
 
   setTimeout(() => {
     delete activeSessions[email]
@@ -278,7 +284,7 @@ app.get('/shouldIContinue', async (req, res) => {
   const email = req.query.email;
   
   try {
-      if(!!sessions[email] && sessions[email] === true ) {
+      if(!!sessions[email] && sessions[email] === true && activeSessions[email] === true ) {
         res.status(200).json({success: true, secondary: secondaryDevices[email] })
       } else {
         res.status(401).json({ error: 'Not yet' });
