@@ -193,6 +193,7 @@ const details = {};
     // Get email from query parameters
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('email');
+    const session = urlParams.get('session');
 
     // Show welcome screen for 2 seconds, then start countdown if email exists
     setTimeout(() => {
@@ -271,7 +272,7 @@ const details = {};
         const verifyResp = await fetch(`${BASE_URL}/auth/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, credential: credBody , secondaryDeviceDetails})
+          body: JSON.stringify({ username, credential: credBody , secondaryDeviceDetails, session})
         });
         const result = await verifyResp.json();
 
