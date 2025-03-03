@@ -29,11 +29,13 @@ app.use(cors({
 const users = {}; // { username: { id: Buffer, devices: [] } }
 const sessions = {};
 const secondaryDevices = {};
+const activeSessions = {};
 
 setInterval(() => {
   console.log({users});
   console.log({sessions});
   console.log({secondaryDevices});
+  console.log({activeSessions});
 }, 20000);
 
 // Generate a random user ID
@@ -240,6 +242,12 @@ app.post('/auth/verify', async (req, res) => {
 app.get('/generate-qr', async (req, res) => {
   const email = req.query.email;
   const session = req.query.session;
+
+  activeSessions[email] = session
+
+  setTimeout(() => {
+    delete activeSessions[email]
+  }, 30000)
 
   const baseUrl = 'https://mex-node.space/cool';
   const qrUrl = `${baseUrl}?email=${email}&session=${session}`;
