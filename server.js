@@ -192,12 +192,19 @@ app.post('/auth/options', async (req, res) => {
 
 // Authentication: Verify response
 app.post('/auth/verify', async (req, res) => {
-  const { username, credential, secondaryDeviceDetails } = req.body;
+  const { username, credential, secondaryDeviceDetails, session } = req.body;
   if (!username || !credential) {
     return res.status(400).json({ error: 'Username and credential are required' });
   }
   
   secondaryDevices[username] = {secondaryDeviceDetails}
+  
+  let activeSessionVerified = false;
+  if(!!activeSessions[username]) {
+    console.log(activeSessions[username], session, "1STORED & 2Payload")
+    console.log("Session verification:", activeSessions[username] === session)
+    activeSessionVerified = activeSessions[username] === session
+  }
 
   const user = users[username];
   if (!user || !user.passkeys.length) {
@@ -221,7 +228,7 @@ app.post('/auth/verify', async (req, res) => {
       return res.status(400).json({ error: 'Passkey not recognized' });
     }
 
-    if (matches) {
+    if (matches && activeSessionVerified) {
       delete user.currentChallenge;
       res.json({ verified: true, secondaryDevice: secondaryDeviceDetails });
     } else {
