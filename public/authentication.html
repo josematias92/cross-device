@@ -36,20 +36,28 @@
       0%, 100% { opacity: 0.4; }
       50% { opacity: 1; }
     }
-    .hammer {
-      display: inline-block;
-      width: 20vw; /* Relative to viewport width */
-      max-width: 80px; /* Cap for larger screens */
+    .loader {
+      display: flex;
+      justify-content: center;
+      width: 20vw;
+      max-width: 80px;
       height: 20vw;
       max-height: 80px;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f97316" viewBox="0 0 24 24"><path d="M20.56 3.91c-.59-.59-1.54-.59-2.12 0L8.57 13.78l1.06 1.06 9.87-9.87c.59-.59.59-1.54 0-2.12zM4.93 17.66l-1.06 1.06c-.39.39-.39 1.02 0 1.41l1.41 1.41c.39.39 1.02.39 1.41 0l1.06-1.06-2.82-2.82zM17.66 4.93l-9.87 9.87-2.82-2.82 9.87-9.87c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12z"/></svg>') no-repeat center;
-      background-size: contain;
-      animation: hammerSwing 1.5s infinite ease-in-out;
     }
-    @keyframes hammerSwing {
+    .gear {
+      width: 50%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f97316" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-10 10 10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2zm2 15h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>') no-repeat center;
+      background-size: contain;
+    }
+    .gear:nth-child(1) { animation: rotateCW 2s infinite linear; }
+    .gear:nth-child(2) { animation: rotateCCW 2s infinite linear; }
+    @keyframes rotateCW {
       0% { transform: rotate(0deg); }
-      25% { transform: rotate(-20deg); }
-      75% { transform: rotate(20deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes rotateCCW {
+      0% { transform: rotate(360deg); }
       100% { transform: rotate(0deg); }
     }
     .welcome-screen {
@@ -97,21 +105,21 @@
         width: 2px;
         height: 2px; /* Smaller stars on mobile */
       }
-      .hammer {
+      .loader {
         width: 15vw;
-        height: 15vw;
         max-width: 60px;
-        max-height: 60px; /* Smaller hammer on mobile */
+        height: 15vw;
+        max-height: 60px; /* Smaller gears on mobile */
       }
     }
     @media (max-width: 480px) {
       #auth-card {
         padding: 1rem; /* Tighter padding on very small screens */
       }
-      .hammer {
+      .loader {
         width: 12vw;
-        height: 12vw;
         max-width: 50px;
+        height: 12vw;
         max-height: 50px; /* Even smaller on tiny screens */
       }
     }
@@ -133,7 +141,10 @@
     </h1>
     <div id="countdown" class="font-bold text-orange-600 mb-4"></div>
     <div id="status" class="font-medium text-orange-600 mb-6"></div>
-    <div class="hammer"></div> <!-- Hammer at the bottom -->
+    <div class="loader">
+      <div class="gear"></div>
+      <div class="gear"></div>
+    </div> <!-- Rotating gears at the bottom -->
   </div>
 
   <script>
