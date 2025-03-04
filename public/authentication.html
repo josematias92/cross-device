@@ -11,6 +11,7 @@
       min-height: 100vh;
       overflow: hidden;
       font-family: 'Arial', sans-serif;
+      margin: 0; /* Remove default margin */
     }
     .glow {
       box-shadow: 0 0 15px rgba(249, 115, 22, 0.8), 0 0 30px rgba(249, 115, 22, 0.4);
@@ -27,7 +28,7 @@
       position: absolute;
       width: 3px;
       height: 3px;
-      background: rgba(249, 115, 22, 0.9); /* Orange stars to contrast white background */
+      background: rgba(249, 115, 22, 0.9); /* Orange stars */
       border-radius: 50%;
       animation: twinkle 2.5s infinite;
     }
@@ -36,10 +37,13 @@
       50% { opacity: 1; }
     }
     .hammer {
-      position: absolute;
-      width: 50px;
-      height: 50px;
+      display: inline-block;
+      width: 20vw; /* Relative to viewport width */
+      max-width: 80px; /* Cap for larger screens */
+      height: 20vw;
+      max-height: 80px;
       background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f97316" viewBox="0 0 24 24"><path d="M20.56 3.91c-.59-.59-1.54-.59-2.12 0L8.57 13.78l1.06 1.06 9.87-9.87c.59-.59.59-1.54 0-2.12zM4.93 17.66l-1.06 1.06c-.39.39-.39 1.02 0 1.41l1.41 1.41c.39.39 1.02.39 1.41 0l1.06-1.06-2.82-2.82zM17.66 4.93l-9.87 9.87-2.82-2.82 9.87-9.87c.59-.59 1.54-.59 2.12 0 .59.59.59 1.54 0 2.12z"/></svg>') no-repeat center;
+      background-size: contain;
       animation: hammerSwing 1.5s infinite ease-in-out;
     }
     @keyframes hammerSwing {
@@ -63,10 +67,53 @@
       opacity: 0;
       pointer-events: none;
     }
-    /* Orange pulsating modal */
+    #welcome h1 {
+      font-size: clamp(2rem, 8vw, 7rem); /* Responsive font size */
+      text-align: center;
+      padding: 1rem;
+    }
+    /* White pulsating modal with orange text */
     #auth-card {
-      background: #f97316; /* Solid Home Depot orange */
-      color: #ffffff; /* White text for contrast */
+      background: #ffffff; /* White background */
+      color: #f97316; /* Orange text */
+      width: 90%; /* Responsive width */
+      max-width: 500px; /* Cap for larger screens */
+      padding: clamp(1rem, 3vw, 2.5rem); /* Responsive padding */
+      margin: 0 auto;
+    }
+    #auth-card h1 {
+      font-size: clamp(1.5rem, 5vw, 3rem); /* Responsive title */
+    }
+    #countdown {
+      font-size: clamp(1.25rem, 4vw, 2rem); /* Responsive countdown */
+    }
+    #status {
+      font-size: clamp(1rem, 3vw, 1.25rem); /* Responsive status */
+    }
+
+    /* Media Queries for Fine-Tuning */
+    @media (max-width: 768px) {
+      .stars {
+        width: 2px;
+        height: 2px; /* Smaller stars on mobile */
+      }
+      .hammer {
+        width: 15vw;
+        height: 15vw;
+        max-width: 60px;
+        max-height: 60px; /* Smaller hammer on mobile */
+      }
+    }
+    @media (max-width: 480px) {
+      #auth-card {
+        padding: 1rem; /* Tighter padding on very small screens */
+      }
+      .hammer {
+        width: 12vw;
+        height: 12vw;
+        max-width: 50px;
+        max-height: 50px; /* Even smaller on tiny screens */
+      }
     }
   </style>
 </head>
@@ -76,17 +123,17 @@
 
   <!-- Welcome Screen -->
   <div id="welcome" class="welcome-screen">
-    <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold text-white drop-shadow-lg">Welcome to The Home Depot</h1>
-    <div class="hammer mt-8" style="width: 80px; height: 80px;"></div>
+    <h1 class="font-bold text-white drop-shadow-lg">Welcome to The Home Depot</h1>
   </div>
 
-  <!-- Authentication Card (Orange Modal) -->
-  <div id="auth-card" class="relative z-10 bg-opacity-100 p-10 rounded-2xl glow pulse max-w-lg w-full text-center hidden">
-    <h1 class="text-5xl font-bold mb-6 text-white drop-shadow-md">
+  <!-- Authentication Card (White Modal) -->
+  <div id="auth-card" class="relative z-10 bg-opacity-100 rounded-2xl glow pulse text-center hidden">
+    <h1 class="font-bold mb-6 text-orange-600 drop-shadow-md">
       Passkey Authentication
     </h1>
-    <div id="countdown" class="text-3xl font-bold text-white mb-4"></div>
-    <div id="status" class="text-lg font-medium text-white"></div>
+    <div id="countdown" class="font-bold text-orange-600 mb-4"></div>
+    <div id="status" class="font-medium text-orange-600 mb-6"></div>
+    <div class="hammer"></div> <!-- Hammer at the bottom -->
   </div>
 
   <script>
