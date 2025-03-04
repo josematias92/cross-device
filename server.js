@@ -203,12 +203,10 @@ app.post('/auth/verify', async (req, res) => {
   if(!!activeSessions[username] && activeSessions[username].length > 0) {
     console.log(activeSessions[username], session, "1STORED & 2Payload")
     console.log("Session verification:", activeSessions[username] === session)
-
     if(activeSessions[username].includes(session)) {
       activeSessionVerified = true
       activeSessions[username] = true
     }
-    
   }
 
   const user = users[username];
@@ -231,6 +229,10 @@ app.post('/auth/verify', async (req, res) => {
     if (!authenticator) {
       console.log('No matching authenticator found');
       return res.status(400).json({ error: 'Passkey not recognized' });
+    }
+
+    if(activeSessionVerified !== true) {
+      res.status(400).json({ error: 'Expired Session or Invalid Session' });
     }
 
     if (matches && activeSessionVerified) {
