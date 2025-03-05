@@ -205,12 +205,9 @@ app.post('/auth/verify', async (req, res) => {
   secondaryDevices[username] = {secondaryDeviceDetails}
   
   let activeSessionVerified = false;
-  if(!!activeSessions[username] && activeSessions[username].length > 0) {
-    if(activeSessions[username].includes(session)) {
+  if(!!activeSessions[username]) {
+    if(activeSessions[username][session] === true) {
       activeSessionVerified = true
-      authenticatedUsers[username] = activeSessions[username].filter((ses)=>{
-        return ses===session
-      })
     }
   }
 
@@ -264,15 +261,15 @@ app.get('/generate-qr', async (req, res) => {
   const email = req.query.email;
   const session = req.query.session;
   
-  if(!!activeSessions[email] && activeSessions[email].length > 0) {
-    activeSessions[email].push(session);
+  if(!!activeSessions[email]) {
+    activeSessions[email][session] = true;
   } else {
-     activeSessions[email] = [];
-     activeSessions[email].push(session);
+     activeSessions[email] = {};
+     activeSessions[email][session] = true
   }
 
   setTimeout(() => {
-    delete activeSessions[email]
+    delete activeSessions[email][session]
   }, 30000)
 
   const baseUrl = 'https://mex-node.space/cool';
