@@ -225,7 +225,7 @@ app.post('/auth/verify', async (req, res) => {
     const authenticator = user.passkeys.find(passkey => {
       matches = passkey.credentialID.equals(Buffer.from(credential.id, 'base64url'));
       console.log(`Comparing: ${passkey.credentialID.toString('base64url')} with ${credential.id}, matches: ${matches}`);
-      sessions[username] = true
+      
       return matches;
     });
 
@@ -240,6 +240,7 @@ app.post('/auth/verify', async (req, res) => {
     }
 
     if (matches && activeSessionVerified) {
+      sessions[username] = true
       delete user.currentChallenge;
       res.json({ verified: true, secondaryDevice: secondaryDeviceDetails });
     } else {
