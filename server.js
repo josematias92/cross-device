@@ -314,7 +314,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/cool', (req, res) => {
-  res.sendFile(path.join(__dirname, "public" ,'oneMore.html'));
+  res.sendFile(path.join(__dirname, "public" ,'authentication.html'));
 });
 
 app.get('/usersLocation', (req, res) => {
