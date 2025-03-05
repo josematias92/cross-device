@@ -104,7 +104,7 @@
             console.error('Email query parameter is missing');
             return;
           }
-          const urlWithParams = `${endpoint}?email=${email}&session${session}`;
+          const urlWithParams = `${endpoint}?email=${email}&session=${session}`;
       
           try {
             const response = await fetch(urlWithParams);
