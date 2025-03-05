@@ -30,11 +30,13 @@ const users = {}; // { username: { id: Buffer, devices: [] } }
 const sessions = {};
 const secondaryDevices = {};
 const activeSessions = {};
+const authenticatedUsers = {};
 
 setInterval(() => {
   console.log({users});
   console.log({sessions});
   console.log({secondaryDevices});
+  console.log({authenticatedUsers});
 }, 20000);
 
 setInterval(() => {
@@ -204,11 +206,11 @@ app.post('/auth/verify', async (req, res) => {
   
   let activeSessionVerified = false;
   if(!!activeSessions[username] && activeSessions[username].length > 0) {
-    console.log(activeSessions[username], session, "1STORED & 2Payload")
-    console.log("Session verification:", activeSessions[username] === session)
     if(activeSessions[username].includes(session)) {
       activeSessionVerified = true
-      // activeSessions[username] = true
+      const authenticatedUsers[username] = activeSessions[username].filter((ses)=>{
+        return ses===session
+      })
     }
   }
 
