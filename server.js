@@ -231,8 +231,8 @@ app.post('/auth/verify', async (req, res) => {
       return res.status(400).json({ error: 'Passkey not recognized' });
     }
 
-    if(activeSessionVerified !== true) {
-      res.status(400).json({ error: 'Expired Session or Invalid Session' });
+    if (activeSessionVerified !== true) {
+      return res.status(400).json({ error: 'Expired Session or Invalid Session' });
     }
 
     if (matches && activeSessionVerified) {
