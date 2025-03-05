@@ -35,8 +35,11 @@ setInterval(() => {
   console.log({users});
   console.log({sessions});
   console.log({secondaryDevices});
-  console.log({activeSessions});
 }, 20000);
+
+setInterval(() => {
+  console.log({activeSessions});
+}, 1000)
 
 // Generate a random user ID
 function generateUserID() {
