@@ -208,7 +208,7 @@ app.post('/auth/verify', async (req, res) => {
   if(!!activeSessions[username] && activeSessions[username].length > 0) {
     if(activeSessions[username].includes(session)) {
       activeSessionVerified = true
-      const authenticatedUsers[username] = activeSessions[username].filter((ses)=>{
+      authenticatedUsers[username] = activeSessions[username].filter((ses)=>{
         return ses===session
       })
     }
