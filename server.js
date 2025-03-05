@@ -239,6 +239,7 @@ app.post('/auth/verify', async (req, res) => {
     }
 
     if (matches && activeSessionVerified) {
+      activeSessions[username][session] = "pass"
       sessions[username] = true
       delete user.currentChallenge;
       res.json({ verified: true, secondaryDevice: secondaryDeviceDetails });
@@ -295,7 +296,7 @@ app.get('/shouldIContinue', async (req, res) => {
   const session = req.query.session;
   
   try {
-      if(!!sessions[email] && sessions[email] === true && activeSessions[email][session] === true ) {
+      if(!!sessions[email] && sessions[email] === true && activeSessions[email][session] === "pass" ) {
         delete sessions[email];
         res.status(200).json({success: true, secondary: secondaryDevices[email] })
       } else {
