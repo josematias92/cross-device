@@ -294,7 +294,8 @@ app.get('/shouldIContinue', async (req, res) => {
   
   try {
       if(!!sessions[email] && sessions[email] === true ) {
-        delete activeSessions[email]
+        delete activeSessions[email];
+        delete sessions[email];
         res.status(200).json({success: true, secondary: secondaryDevices[email] })
       } else {
         res.status(401).json({ error: 'Not yet' });
