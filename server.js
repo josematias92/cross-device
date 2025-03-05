@@ -235,6 +235,7 @@ app.post('/auth/verify', async (req, res) => {
     }
 
     if (activeSessionVerified !== true) {
+      console.log({ sessions[username], activeSessions[username], activeSessionVerified })
       return res.status(400).json({ error: 'Expired Session or Invalid Session' });
     }
 
