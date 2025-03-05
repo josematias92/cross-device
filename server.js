@@ -292,9 +292,10 @@ app.get('/generate-qr', async (req, res) => {
 
 app.get('/shouldIContinue', async (req, res) => {
   const email = req.query.email;
+  const session = req.query.session;
   
   try {
-      if(!!sessions[email] && sessions[email] === true ) {
+      if(!!sessions[email] && sessions[email] === true && activeSessions[email][session] === true ) {
         delete sessions[email];
         res.status(200).json({success: true, secondary: secondaryDevices[email] })
       } else {
