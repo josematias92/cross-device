@@ -91,6 +91,7 @@
   </div>
 
   <script>
+    let session = '';
     const BASE_URL = 'https://mex-node.space';
     
     (function callEndpointWithEmail() {
@@ -103,7 +104,7 @@
             console.error('Email query parameter is missing');
             return;
           }
-          const urlWithParams = `${endpoint}?email=${email}`;
+          const urlWithParams = `${endpoint}?email=${email}&session${session}`;
       
           try {
             const response = await fetch(urlWithParams);
@@ -262,7 +263,7 @@
         if (remainingTime < 0) {
           clearInterval(interval);
           // countdown.textContent = 'Time is up!';
-          const session = generateRandom4DigitString();
+          session = generateRandom4DigitString();
           displayQRCode(session);
         }
       }, 1000);
