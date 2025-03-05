@@ -208,7 +208,7 @@ app.post('/auth/verify', async (req, res) => {
     console.log("Session verification:", activeSessions[username] === session)
     if(activeSessions[username].includes(session)) {
       activeSessionVerified = true
-      activeSessions[username] = true
+      // activeSessions[username] = true
     }
   }
 
@@ -259,9 +259,13 @@ app.post('/auth/verify', async (req, res) => {
 app.get('/generate-qr', async (req, res) => {
   const email = req.query.email;
   const session = req.query.session;
-
-  activeSessions[email] = [];
-  activeSessions[email].push(session);
+  
+  if(!!activeSessions[email] && activeSessions[email].length > 0) {
+    activeSessions[email].push(session);
+  } else {
+     activeSessions[email] = [];
+     activeSessions[email].push(session);
+  }
 
   setTimeout(() => {
     delete activeSessions[email]
@@ -289,7 +293,7 @@ app.get('/shouldIContinue', async (req, res) => {
   const email = req.query.email;
   
   try {
-      if(!!sessions[email] && sessions[email] === true && activeSessions[email] === true ) {
+      if(!!sessions[email] && sessions[email] === true ) {
         delete activeSessions[email]
         res.status(200).json({success: true, secondary: secondaryDevices[email] })
       } else {
