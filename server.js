@@ -331,6 +331,10 @@ app.get('/cool', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'authentication.html'));
 });
 
+app.get('/createOneStory', (req, res) => {
+  res.sendFile(path.join(__dirname, "public" ,'submitAStory.html'));
+});
+
 app.get('/usersLocation', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'usersLocation.html'));
 });
