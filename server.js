@@ -323,6 +323,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'indexRev.html'));
 });
 
+app.get('/dairy', (req, res) => {
+  res.sendFile(path.join(__dirname, "public" ,'dairy.html'));
+});
+
 app.get('/cool', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'authentication.html'));
 });
