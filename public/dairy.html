@@ -284,6 +284,31 @@
             z-index: 3;
         }
 
+        .qr-code {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .qr-code img {
+            width: 150px;
+            height: 150px;
+            border: 2px solid #ff4500;
+            border-radius: 8px;
+            background: #fff; /* White background for QR code contrast */
+            padding: 10px;
+            transition: transform 0.3s;
+        }
+
+        .qr-code img:hover {
+            transform: scale(1.05);
+        }
+
+        .qr-code p {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ddd;
+        }
+
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 32px;
@@ -293,6 +318,10 @@
             }
             .slide {
                 background-attachment: scroll;
+            }
+            .qr-code img {
+                width: 120px;
+                height: 120px;
             }
         }
     </style>
@@ -355,6 +384,12 @@
 
     <footer>
         <p>© 2025 Motorcycling Diary. All rights reserved.</p>
+        <div class="qr-code">
+            <a href="https://mex-node.space" target="_blank">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://mex-node.space" alt="QR Code to Mex-node.space">
+            </a>
+            <p>Scan to visit Mex-node.space</p>
+        </div>
     </footer>
 
     <script>
