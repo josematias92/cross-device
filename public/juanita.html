@@ -12,6 +12,7 @@
             background-color: #ffccf9;
             color: #8a2be2;
             text-align: center;
+            overflow: hidden;
         }
 
         header {
@@ -43,6 +44,8 @@
             border-radius: 20px;
             max-width: 800px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
         }
 
         .container h2 {
@@ -81,6 +84,8 @@
             padding: 2rem;
             border-radius: 20px;
             margin: 2rem 0;
+            position: relative;
+            z-index: 1;
         }
 
         .cta h2 {
@@ -108,14 +113,68 @@
             color: white;
             padding: 1rem;
             text-align: center;
+            position: relative;
+            z-index: 1;
         }
 
         footer p {
             margin: 0;
         }
+
+        /* Fireworks Animation */
+        .firework {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff69b4;
+            border-radius: 50%;
+            animation: explode 1.5s ease-out infinite;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(10); opacity: 0; }
+        }
+
+        .firework:nth-child(1) {
+            top: 10%;
+            left: 20%;
+            animation-delay: 0.5s;
+        }
+
+        .firework:nth-child(2) {
+            top: 30%;
+            left: 50%;
+            animation-delay: 1s;
+        }
+
+        .firework:nth-child(3) {
+            top: 20%;
+            left: 80%;
+            animation-delay: 1.5s;
+        }
+
+        .firework:nth-child(4) {
+            top: 50%;
+            left: 10%;
+            animation-delay: 2s;
+        }
+
+        .firework:nth-child(5) {
+            top: 70%;
+            left: 70%;
+            animation-delay: 2.5s;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Fireworks -->
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
 
     <header>
         <h1>¡Feliz Cumpleaños, Juanita!</h1>
@@ -131,10 +190,10 @@
     <div class="container">
         <h2>¡Snoopy te felicita!</h2>
         <div class="gallery">
-            <img src="https://source.unsplash.com/200x200/?snoopy" alt="Snoopy 1">
-            <img src="https://source.unsplash.com/200x200/?snoopy,happy" alt="Snoopy 2">
-            <img src="https://source.unsplash.com/200x200/?snoopy,party" alt="Snoopy 3">
-            <img src="https://source.unsplash.com/200x200/?snoopy,celebration" alt="Snoopy 4">
+            <img src="https://i.imgur.com/3QZQZQy.png" alt="Snoopy 1">
+            <img src="https://i.imgur.com/3QZQZQy.png" alt="Snoopy 2">
+            <img src="https://i.imgur.com/3QZQZQy.png" alt="Snoopy 3">
+            <img src="https://i.imgur.com/3QZQZQy.png" alt="Snoopy 4">
         </div>
     </div>
 
