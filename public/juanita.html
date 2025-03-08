@@ -12,7 +12,7 @@
             background-color: #ffccf9;
             color: #8a2be2;
             text-align: center;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         header {
@@ -61,7 +61,7 @@
 
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
             margin: 2rem 0;
         }
@@ -230,6 +230,25 @@
             0% { transform: translateY(0); }
             100% { transform: translateY(-100vh); }
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 3rem;
+            }
+
+            .container h2, .cta h2, .message-section h2 {
+                font-size: 2rem;
+            }
+
+            .gallery {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+
+            .message-section input {
+                width: 90%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -288,6 +307,13 @@
                 balloon.className = 'balloon';
                 balloon.textContent = message;
                 document.body.appendChild(balloon);
+
+                // Position balloon randomly
+                const randomLeft = Math.random() * (window.innerWidth - 100);
+                balloon.style.left = `${randomLeft}px`;
+
+                // Scroll up to see the balloon
+                window.scrollTo({ top: 0, behavior: 'smooth' });
 
                 // Remove balloon after animation ends
                 setTimeout(() => {
