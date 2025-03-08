@@ -1,1 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Feliz Cumpleaños, Juanita!</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #ffccf9;
+            color: #8a2be2;
+            text-align: center;
+        }
 
+        header {
+            background: url('https://source.unsplash.com/1600x900/?snoopy,birthday') no-repeat center center/cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 4rem;
+            text-shadow: 2px 2px 5px #ff69b4;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .container {
+            padding: 2rem;
+            background-color: #fff0f6;
+            margin: 2rem auto;
+            border-radius: 20px;
+            max-width: 800px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .container h2 {
+            font-size: 2.5rem;
+            color: #ff69b4;
+            margin-bottom: 1rem;
+        }
+
+        .container p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            border: 4px solid #ff69b4;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery img:hover {
+            transform: scale(1.1);
+        }
+
+        .cta {
+            background: #ff69b4;
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            margin: 2rem 0;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta button {
+            background: #8a2be2;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .cta button:hover {
+            background: #7b1fa2;
+        }
+
+        footer {
+            background: #ff69b4;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>¡Feliz Cumpleaños, Juanita!</h1>
+    </header>
+
+    <div class="container">
+        <h2>¡Es tu día especial!</h2>
+        <p>Querida Juanita,</p>
+        <p>Hoy es un día muy especial porque celebramos tu existencia. Eres una persona increíble, llena de amor, alegría y feminidad. Que este día esté lleno de sonrisas, abrazos y momentos inolvidables. ¡Te lo mereces todo!</p>
+        <p>Con mucho cariño, tus amigos y familia.</p>
+    </div>
+
+    <div class="container">
+        <h2>¡Snoopy te felicita!</h2>
+        <div class="gallery">
+            <img src="https://source.unsplash.com/200x200/?snoopy" alt="Snoopy 1">
+            <img src="https://source.unsplash.com/200x200/?snoopy,happy" alt="Snoopy 2">
+            <img src="https://source.unsplash.com/200x200/?snoopy,party" alt="Snoopy 3">
+            <img src="https://source.unsplash.com/200x200/?snoopy,celebration" alt="Snoopy 4">
+        </div>
+    </div>
+
+    <div class="cta">
+        <h2>¡Celebremos juntos!</h2>
+        <button onclick="alert('¡Vamos a festejar, Juanita! 🎉')">Haz clic para celebrar</button>
+    </div>
+
+    <footer>
+        <p>© 2023 ¡Feliz Cumpleaños, Juanita! Con mucho amor y cariño.</p>
+    </footer>
+
+</body>
+</html>
