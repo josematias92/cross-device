@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motorcycling Adventures</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
 
+        header {
+            background: url('https://source.unsplash.com/1600x900/?motorcycle') no-repeat center center/cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 4rem;
+            animation: fadeIn 2s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        nav {
+            background: #333;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li {
+            margin: 0 1rem;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            padding: 2rem;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .intro h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .intro p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery img:hover {
+            transform: scale(1.05);
+        }
+
+        .cta {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta button {
+            background: #ff5722;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .cta button:hover {
+            background: #e64a19;
+        }
+
+        footer {
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Motorcycling Adventures</h1>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <section id="home" class="intro">
+            <h2>Welcome to the World of Motorcycling</h2>
+            <p>Experience the thrill of the open road, the wind in your face, and the roar of the engine. Whether you're a seasoned rider or just starting out, motorcycling offers an unparalleled sense of freedom and adventure.</p>
+        </section>
+
+        <section id="gallery" class="gallery">
+            <img src="https://source.unsplash.com/300x200/?motorcycle" alt="Motorcycle 1">
+            <img src="https://source.unsplash.com/300x200/?bike" alt="Motorcycle 2">
+            <img src="https://source.unsplash.com/300x200/?harley" alt="Motorcycle 3">
+            <img src="https://source.unsplash.com/300x200/?sportbike" alt="Motorcycle 4">
+            <img src="https://source.unsplash.com/300x200/?cruiser" alt="Motorcycle 5">
+            <img src="https://source.unsplash.com/300x200/?motorbike" alt="Motorcycle 6">
+        </section>
+
+        <section id="about" class="cta">
+            <h2>Ready to Ride?</h2>
+            <button onclick="alert('Let’s hit the road!')">Join the Adventure</button>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Motorcycling Adventures. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
