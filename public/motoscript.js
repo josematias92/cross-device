@@ -14,6 +14,7 @@ let reviews = [];
 let news = [];
 let repairShops = [];
 let tips = [];
+let drawerOpen = false;
 
 function createPost() {
     const content = document.getElementById('postContent').value;
@@ -118,6 +119,12 @@ function addTip() {
     }
 }
 
+function toggleDrawer() {
+    const drawer = document.getElementById('drawer');
+    drawerOpen = !drawerOpen;
+    drawer.classList.toggle('open');
+}
+
 function formatTime(date) {
     const now = new Date();
     const diff = Math.floor((now - date) / 1000);
@@ -129,11 +136,11 @@ function formatTime(date) {
 }
 
 // Initial data
-posts.push(new Post("Just finished a great ride on my Harley! #MotorcycleLife", ["@roadking", "@bikerbro"]));
+posts.push(new Post("Just finished a great ride on my Svartpilen! #MotorcycleLife", ["@roadking", "@bikerbro"]));
 posts.push(new Post("Anyone up for a group ride this weekend?", ["@rideordie"]));
 locations.push("Twisties at Dragon's Tail");
 reviews.push("5/5 stars for RevZilla helmet - great protection!");
-news.push("New Harley model announced for 2025");
+news.push("New Svartpilen model announced for 2025");
 repairShops.push("Mike's Bike Shop - Denver, CO");
 tips.push("Check tire pressure before every ride");
 
