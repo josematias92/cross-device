@@ -5,39 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Riders Hub - Motorcycle Community</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
             font-family: Arial, sans-serif;
             background: #1a1a1a;
             color: #fff;
-            margin: 0;
-            padding: 20px;
+            padding: 10px;
+            font-size: 16px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 100%;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         .main-feed, .sidebar {
             background: #2d2d2d;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
         }
         .post-form, .section {
             background: #333;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         .post-input {
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 8px;
+            margin: 8px 0;
             border: none;
             border-radius: 4px;
             background: #404040;
             color: #fff;
+            font-size: 14px;
         }
         .post-button, .section-button {
             background: #ff6200;
@@ -46,75 +52,148 @@
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
         }
         .post-button:hover, .section-button:hover {
             background: #ff8340;
         }
         .post {
             background: #333;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         .post-header {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             background: #ff6200;
             border-radius: 50%;
-            margin-right: 10px;
+            margin-right: 8px;
+            flex-shrink: 0;
         }
         .username {
             font-weight: bold;
             color: #ff6200;
+            font-size: 14px;
         }
         .timestamp {
             color: #888;
-            font-size: 0.9em;
-            margin-left: 10px;
+            font-size: 12px;
+            margin-left: 8px;
         }
         .tags {
             color: #ff8340;
             margin: 5px 0;
+            font-size: 13px;
         }
         .comments {
-            margin-top: 10px;
-            padding-left: 20px;
+            margin-top: 8px;
+            padding-left: 15px;
         }
         .comment {
             color: #ddd;
-            font-size: 0.9em;
+            font-size: 13px;
             margin: 5px 0;
         }
         .comment-input {
             width: 100%;
-            padding: 8px;
-            margin-top: 10px;
+            padding: 6px;
+            margin-top: 8px;
             background: #404040;
             border: none;
             border-radius: 4px;
             color: #fff;
+            font-size: 13px;
         }
         .section h3 {
             color: #ff6200;
-            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 16px;
         }
         .section-item {
-            margin: 10px 0;
-            padding: 10px;
+            margin: 8px 0;
+            padding: 8px;
             background: #404040;
             border-radius: 4px;
+            font-size: 13px;
+        }
+        h1 {
+            color: #ff6200;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        /* Tablet and Desktop Styles */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 1000px;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .main-feed {
+                flex: 2;
+                margin-right: 15px;
+            }
+            .sidebar {
+                flex: 1;
+                min-width: 300px;
+            }
+            .post-form, .section {
+                padding: 15px;
+            }
+            .post-input {
+                padding: 10px;
+                font-size: 16px;
+            }
+            .post-button, .section-button {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+            .post {
+                padding: 15px;
+            }
+            .avatar {
+                width: 40px;
+                height: 40px;
+            }
+            .username {
+                font-size: 16px;
+            }
+            .timestamp {
+                font-size: 14px;
+            }
+            .tags {
+                font-size: 14px;
+            }
+            .comment {
+                font-size: 14px;
+            }
+            .comment-input {
+                padding: 8px;
+                font-size: 14px;
+            }
+            .section h3 {
+                font-size: 18px;
+            }
+            .section-item {
+                padding: 10px;
+                font-size: 14px;
+            }
+            h1 {
+                font-size: 28px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="main-feed">
-            <h1 style="color: #ff6200;">Riders Hub</h1>
+            <h1>Riders Hub</h1>
             <div class="post-form">
                 <textarea class="post-input" id="postContent" placeholder="What's on your mind, rider?"></textarea>
                 <input class="post-input" id="tagsInput" placeholder="Tags (e.g., @rider1 @rider2)">
@@ -149,6 +228,6 @@
             </div>
         </div>
     </div>
-    <script src="motoscript.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
