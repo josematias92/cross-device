@@ -24,6 +24,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            position: relative;
         }
         .main-feed {
             background: #2d2d2d;
@@ -66,7 +67,7 @@
             padding: 10px;
             border-radius: 8px;
             margin-bottom: 10px;
-            border-left: 4px solid #ff6200; /* Clean visual cue */
+            border-left: 4px solid #ff6200;
         }
         .post-header {
             display: flex;
@@ -141,13 +142,26 @@
         .drawer.open {
             transform: translateY(0);
         }
-        .drawer-handle {
-            width: 40px;
-            height: 4px;
+        .drawer-button {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
             background: #ff6200;
-            border-radius: 2px;
-            margin: 0 auto 15px;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
             cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+        .drawer-button:hover {
+            background: #ff8340;
         }
         .section {
             margin-bottom: 15px;
@@ -224,6 +238,13 @@
             .drawer {
                 max-height: 60vh;
             }
+            .drawer-button {
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
         }
     </style>
 </head>
@@ -238,8 +259,8 @@
             </div>
             <div id="feed"></div>
         </div>
+        <button class="drawer-button" onclick="toggleDrawer()">+</button>
         <div class="drawer" id="drawer">
-            <div class="drawer-handle" onclick="toggleDrawer()"></div>
             <div class="section" id="location">
                 <h3>Ride Locations</h3>
                 <div id="location-content"></div>
