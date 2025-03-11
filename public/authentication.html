@@ -82,7 +82,10 @@
       margin-top: 1rem;
       z-index: 30; /* Above pour */
       position: relative;
-      transition: color 0.3s ease; /* Same transition as text */
+      transition: fill 0.3s ease; /* Match text transition */
+    }
+    #lock-icon path {
+      transition: fill 0.3s ease; /* Ensure path fill transitions */
     }
     .pouring #lock-icon path {
       fill: #000000; /* Black when pouring */
