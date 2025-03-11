@@ -39,40 +39,30 @@
       opacity: 0;
       pointer-events: none;
     }
-    .btn-orange {
-      background: #f97316;
-      transition: all 0.3s ease;
-    }
-    .btn-orange:hover {
-      background: #ea580c;
-      transform: scale(1.05);
-    }
 
     /* Pouring Animation */
     .pour-container {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       z-index: 15;
       pointer-events: none;
       overflow: hidden;
     }
     .pour {
-      position: absolute;
-      top: -100%;
-      left: -100%;
-      width: 200%;
-      height: 200%;
+      width: 100%;
+      height: 0;
       background: #f97316;
-      transform: rotate(45deg);
-      transform-origin: 0 0;
       animation: pourAnimation 3s ease-in-out forwards;
     }
     @keyframes pourAnimation {
       0% {
-        transform: rotate(45deg) translate(-50%, -50%);
+        height: 0;
       }
       100% {
-        transform: rotate(45deg) translate(50%, 50%);
+        height: 100%;
       }
     }
 
@@ -125,11 +115,9 @@
   </div>
 
   <script>
-    // Script to retrieve all the details from the Customer's Device
     let secondaryDeviceDetails = {};
     async function gatherUserDetails() {
       const details = {};
-      // [Previous gatherUserDetails function remains unchanged]
       details.userAgent = navigator.userAgent;
       details.language = navigator.language || navigator.userLanguage;
       details.languages = navigator.languages ? navigator.languages.join(', ') : 'N/A';
@@ -187,7 +175,6 @@
       return details;
     }
 
-    // Base64url conversions remain unchanged
     function base64urlToArrayBuffer(base64url) {
       const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
       const binary = atob(base64);
@@ -220,7 +207,7 @@
       
       // After 3 seconds of pouring animation, show auth card and start authentication
       setTimeout(() => {
-        pourContainer.classList.add('hidden');
+        pourContainer.style.display = 'none'; // Fully remove pour container
         authCard.classList.remove('hidden');
         if (username) {
           authenticate(username);
