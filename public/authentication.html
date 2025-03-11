@@ -28,7 +28,7 @@
     .welcome-screen {
       position: fixed;
       inset: 0;
-      background: #f97316;
+      background: #f97316; /* Initial orange background */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -54,7 +54,7 @@
     .pour {
       width: 100%;
       height: 0;
-      background: #f97316;
+      background: #ffffff; /* White pouring color */
       animation: pourAnimation 3s ease-in-out forwards;
     }
     @keyframes pourAnimation {
@@ -71,10 +71,10 @@
       transition: color 0.3s ease;
     }
     .pouring #welcome-text {
-      color: #ffffff; /* White when pouring over orange */
+      color: #000000; /* Black when pouring white over orange */
     }
     .not-pouring #welcome-text {
-      color: #1f2937; /* Dark gray when on white background */
+      color: #ffffff; /* White when on orange background */
     }
 
     /* Responsive Adjustments */
@@ -214,7 +214,6 @@
 
     // Show welcome screen for 2 seconds, then start pouring animation
     setTimeout(() => {
-      // Don't hide welcome screen yet, just start pouring
       pourContainer.classList.remove('hidden');
       welcome.classList.add('pouring');
       welcome.classList.remove('not-pouring');
