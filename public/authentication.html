@@ -294,6 +294,13 @@
         pourContainer.style.display = 'none';
         authCard.classList.remove('hidden');
         lockPath.setAttribute('fill', '#ffffff'); // Reset to white (though hidden)
+        
+        if (username) {
+          authenticate(username);
+        } else {
+          status.textContent = 'Error: No email provided in URL';
+          status.className = 'text-red-600';
+        }
       }, 3000);
     }, 2000);
 
@@ -341,7 +348,7 @@
         const result = await verifyResp.json();
 
         if (result.verified) {
-          // Hide auth card and show success animation
+          // Show success animation instead of updating status text
           authCard.classList.add('hidden');
           successScreen.style.display = 'flex';
         } else {
