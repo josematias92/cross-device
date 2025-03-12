@@ -87,7 +87,7 @@ app.post('/register/options', async (req, res) => {
       userID: users[username].id,
       userName: username,
       attestationType: 'none',
-      "authenticatorSelection": {
+      authenticatorSelection: {
         "userVerification": "preferred",
         "authenticatorAttachment": "platform"
       }
