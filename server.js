@@ -87,7 +87,10 @@ app.post('/register/options', async (req, res) => {
       userID: users[username].id,
       userName: username,
       attestationType: 'none',
-      authenticatorSelection: { userVerification: 'preferred' },
+      "authenticatorSelection": {
+        "userVerification": "preferred",
+        "authenticatorAttachment": "platform"
+      }
     });
 
     users[username].currentChallenge = options.challenge;
