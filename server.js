@@ -177,7 +177,7 @@ app.post('/auth/options', async (req, res) => {
         return {
           id: credentialIDBase64, // Use base64url string instead of raw Buffer
           type: 'public-key',
-          transports: passkey.transports || ['internal', 'usb', 'ble', 'nfc'],
+          transports: passkey.transports || ['internal'],
         };
       });
       
