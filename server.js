@@ -342,7 +342,9 @@ app.get('/usersLocation', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'usersLocation.html'));
 });
 
-app.get("/news", () => {
+
+// New App
+app.get("/news", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "SPA.html"))
 })
 
