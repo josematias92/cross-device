@@ -17,47 +17,73 @@
     <script type="text/babel">
         function App() {
             const [isNavOpen, setIsNavOpen] = React.useState(false);
+            const isMobile = window.innerWidth <= 768; // Simple mobile detection
+
+            const containerStyles = {
+                minHeight: '100vh',
+                backgroundColor: '#ffffff',
+                fontFamily: "'Source Sans Pro', sans-serif",
+                color: '#1a1a1a',
+                lineHeight: '1.7'
+            };
+
+            const headerStyles = {
+                padding: isMobile ? '15px 20px' : '20px 30px',
+                borderBottom: '1px solid #e5e5e5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                maxWidth: '1200px',
+                margin: '0 auto',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '10px' : '0'
+            };
+
+            const mainStyles = {
+                maxWidth: '1200px',
+                margin: isMobile ? '20px auto' : '30px auto',
+                padding: isMobile ? '0 15px' : '0 30px',
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
+                gap: isMobile ? '20px' : '40px'
+            };
+
+            const articleGridStyles = {
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                gap: isMobile ? '20px' : '30px'
+            };
 
             return (
-                <div style={{
-                    minHeight: '100vh',
-                    backgroundColor: '#ffffff',
-                    fontFamily: "'Source Sans Pro', sans-serif",
-                    color: '#1a1a1a',
-                    lineHeight: '1.7'
-                }}>
+                <div style={containerStyles}>
                     {/* Header */}
                     <>
-                        <header style={{
-                            padding: '20px 30px',
-                            borderBottom: '1px solid #e5e5e5',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            maxWidth: '1200px',
-                            margin: '0 auto'
-                        }}>
+                        <header style={headerStyles}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                                 <img 
                                     src="https://res.cloudinary.com/dkehkmizr/image/upload/v1742145139/image-4_amhv2b.jpg"
                                     alt="Fox Mascot"
                                     style={{
-                                        width: '50px',
-                                        height: '50px',
+                                        width: isMobile ? '40px' : '50px',
+                                        height: isMobile ? '40px' : '50px',
                                         borderRadius: '50%',
-                                        border: '2px solid #87ceeb', // Sky blue
+                                        border: '2px solid #87ceeb',
                                         objectFit: 'cover'
                                     }}
                                 />
                                 <h1 style={{
                                     fontFamily: "'Playfair Display', serif",
-                                    fontSize: '32px',
+                                    fontSize: isMobile ? '24px' : '32px',
                                     fontWeight: '700',
-                                    color: '#87ceeb', // Sky blue
+                                    color: '#87ceeb',
                                     margin: 0
                                 }}>The Fresh Times</h1>
                             </div>
-                            <div style={{ fontSize: '14px', color: '#666' }}>
+                            <div style={{ 
+                                fontSize: isMobile ? '12px' : '14px', 
+                                color: '#666',
+                                textAlign: isMobile ? 'center' : 'right'
+                            }}>
                                 {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                             </div>
                         </header>
@@ -65,30 +91,23 @@
 
                     {/* Main Content */}
                     <>
-                        <main style={{
-                            maxWidth: '1200px',
-                            margin: '30px auto',
-                            padding: '0 30px',
-                            display: 'grid',
-                            gridTemplateColumns: '2fr 1fr',
-                            gap: '40px'
-                        }}>
+                        <main style={mainStyles}>
                             {/* Featured Section */}
                             <>
                                 <section>
                                     <article style={{
                                         borderBottom: '1px solid #e5e5e5',
                                         paddingBottom: '20px',
-                                        marginBottom: '30px'
+                                        marginBottom: isMobile ? '20px' : '30px'
                                     }}>
                                         <h2 style={{
                                             fontFamily: "'Playfair Display', serif",
-                                            fontSize: '28px',
+                                            fontSize: isMobile ? '24px' : '28px',
                                             fontWeight: '700',
                                             marginBottom: '15px'
                                         }}>Top Story: A New Dawn</h2>
                                         <p style={{
-                                            fontSize: '16px',
+                                            fontSize: isMobile ? '15px' : '16px',
                                             color: '#333',
                                             marginBottom: '15px'
                                         }}>
@@ -98,28 +117,24 @@
                                             color: '#87ceeb',
                                             textDecoration: 'none',
                                             fontWeight: '600',
-                                            fontSize: '14px'
+                                            fontSize: isMobile ? '13px' : '14px'
                                         }}>Continue Reading →</a>
                                     </article>
 
-                                    <div style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 1fr',
-                                        gap: '30px'
-                                    }}>
+                                    <div style={articleGridStyles}>
                                         {Array(2).fill().map((_, i) => (
                                             <article key={i} style={{
-                                                backgroundColor: '#f9fbfc', // Soft color
-                                                padding: '20px',
+                                                backgroundColor: '#f9fbfc',
+                                                padding: isMobile ? '15px' : '20px',
                                                 borderRadius: '8px'
                                             }}>
                                                 <h3 style={{
-                                                    fontSize: '20px',
+                                                    fontSize: isMobile ? '18px' : '20px',
                                                     fontWeight: '600',
                                                     marginBottom: '10px'
                                                 }}>Article {i + 1}</h3>
                                                 <p style={{
-                                                    fontSize: '14px',
+                                                    fontSize: isMobile ? '13px' : '14px',
                                                     color: '#555'
                                                 }}>Brief summary of article {i + 1} goes here...</p>
                                             </article>
@@ -131,11 +146,13 @@
                             {/* Sidebar */}
                             <>
                                 <aside style={{
-                                    borderLeft: '1px solid #e5e5e5',
-                                    paddingLeft: '20px'
+                                    borderLeft: isMobile ? 'none' : '1px solid #e5e5e5',
+                                    paddingLeft: isMobile ? '0' : '20px',
+                                    paddingTop: isMobile ? '20px' : '0',
+                                    borderTop: isMobile ? '1px solid #e5e5e5' : 'none'
                                 }}>
                                     <h3 style={{
-                                        fontSize: '18px',
+                                        fontSize: isMobile ? '16px' : '18px',
                                         fontWeight: '600',
                                         color: '#87ceeb',
                                         marginBottom: '20px'
@@ -145,12 +162,12 @@
                                             marginBottom: '20px'
                                         }}>
                                             <h4 style={{
-                                                fontSize: '16px',
+                                                fontSize: isMobile ? '15px' : '16px',
                                                 fontWeight: '400',
                                                 marginBottom: '5px'
                                             }}>Update {i + 1}</h4>
                                             <p style={{
-                                                fontSize: '13px',
+                                                fontSize: isMobile ? '12px' : '13px',
                                                 color: '#666'
                                             }}>Short update text here...</p>
                                         </div>
@@ -167,12 +184,12 @@
                             position: 'fixed',
                             bottom: '20px',
                             right: '20px',
-                            width: '50px',
-                            height: '50px',
+                            width: isMobile ? '45px' : '50px',
+                            height: isMobile ? '45px' : '50px',
                             backgroundColor: '#87ceeb',
                             border: 'none',
                             borderRadius: '50%',
-                            fontSize: '22px',
+                            fontSize: isMobile ? '20px' : '22px',
                             color: 'white',
                             cursor: 'pointer',
                             boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
@@ -192,8 +209,9 @@
                                 backgroundColor: 'white',
                                 borderRadius: '8px',
                                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                                padding: '20px',
-                                border: '1px solid #e5e5e5'
+                                padding: isMobile ? '15px' : '20px',
+                                border: '1px solid #e5e5e5',
+                                width: isMobile ? '200px' : 'auto'
                             }}>
                                 <ul style={{
                                     listStyle: 'none'
@@ -202,7 +220,7 @@
                                         <a href="#world" style={{
                                             textDecoration: 'none',
                                             color: '#87ceeb',
-                                            fontSize: '16px',
+                                            fontSize: isMobile ? '15px' : '16px',
                                             fontWeight: '600'
                                         }}>World</a>
                                     </li>
@@ -210,7 +228,7 @@
                                         <a href="#business" style={{
                                             textDecoration: 'none',
                                             color: '#87ceeb',
-                                            fontSize: '16px',
+                                            fontSize: isMobile ? '15px' : '16px',
                                             fontWeight: '600'
                                         }}>Business</a>
                                     </li>
@@ -218,7 +236,7 @@
                                         <a href="#opinion" style={{
                                             textDecoration: 'none',
                                             color: '#87ceeb',
-                                            fontSize: '16px',
+                                            fontSize: isMobile ? '15px' : '16px',
                                             fontWeight: '600'
                                         }}>Opinion</a>
                                     </li>
@@ -226,7 +244,7 @@
                                         <a href="#culture" style={{
                                             textDecoration: 'none',
                                             color: '#87ceeb',
-                                            fontSize: '16px',
+                                            fontSize: isMobile ? '15px' : '16px',
                                             fontWeight: '600'
                                         }}>Culture</a>
                                     </li>
