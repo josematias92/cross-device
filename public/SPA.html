@@ -26,23 +26,39 @@
                     padding: '20px',
                     lineHeight: '1.6'
                 }}>
-                    {/* Header Fragment */}
+                    {/* Header Fragment with Mascot */}
                     <>
                         <header style={{
                             marginBottom: '40px',
                             borderBottom: '1px solid #f0f7fa',
-                            paddingBottom: '10px'
+                            paddingBottom: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px'
                         }}>
-                            <h1 style={{
-                                fontSize: '28px',
-                                fontWeight: '300',
-                                color: '#87ceeb', // Sky blue
-                                marginBottom: '10px'
-                            }}>Fresh News</h1>
-                            <p style={{
-                                fontSize: '14px',
-                                color: '#666'
-                            }}>Your daily dose of minimal news</p>
+                            <img 
+                                src="https://res.cloudinary.com/dkehkmizr/image/upload/v1742145139/image-4_amhv2b.jpg"
+                                alt="Fox Mascot"
+                                style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    border: '2px solid #87ceeb', // Sky blue accent
+                                    objectFit: 'cover'
+                                }}
+                            />
+                            <div>
+                                <h1 style={{
+                                    fontSize: '28px',
+                                    fontWeight: '300',
+                                    color: '#87ceeb', // Sky blue
+                                    marginBottom: '5px'
+                                }}>Fresh News</h1>
+                                <p style={{
+                                    fontSize: '14px',
+                                    color: '#666'
+                                }}>Your daily dose of minimal news</p>
+                            </div>
                         </header>
                     </>
 
