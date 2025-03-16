@@ -4,12 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>React SPA</title>
-    <!-- Ensures mobile-first responsiveness -->
+    <!-- Mobile-first viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 </head>
 <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <!-- React will render into this div -->
+    <!-- Root element for React -->
     <div id="root"></div>
+
+    <!-- React and ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Our React App -->
+    <script type="text/babel">
+        function App() {
+            const [isNavOpen, setIsNavOpen] = React.useState(false);
+
+            return (
+                <div style={{
+                    minHeight: '100vh',
+                    position: 'relative',
+                    padding: '20px',
+                    backgroundColor: '#ffffff',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#333'
+                }}>
+                    {/* Main Content */}
+                    <main style={{
+                        paddingBottom: '60px'
+                    }}>
+                        <section style={{
+                            backgroundColor: '#f0f7fa', // Soft, eye-friendly color
+                            padding: '20px',
+                            borderRadius: '8px',
+                            margin: '20px 0'
+                        }}>
+                            <h1>Welcome</h1>
+                            <p>This is a clean, mobile-first SPA built with React</p>
+                        </section>
+                    </main>
+
+                    {/* Navigation Button */}
+                    <button
+                        onClick={() => setIsNavOpen(!isNavOpen)}
+                        style={{
+                            position: 'fixed',
+                            bottom: '20px',
+                            right: '20px',
+                            width: '50px',
+                            height: '50px',
+                            backgroundColor: '#87ceeb', // Sky blue
+                            border: 'none',
+                            borderRadius: '50%',
+                            fontSize: '24px',
+                            color: 'white',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                            transition: 'transform 0.2s'
+                        }}
+                    >
+                        ☰
+                    </button>
+
+                    {/* Navigation Menu */}
+                    {isNavOpen && (
+                        <nav style={{
+                            position: 'fixed',
+                            bottom: '80px',
+                            right: '20px',
+                            backgroundColor: 'white',
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                            padding: '10px'
+                        }}>
+                            <ul style={{
+                                listStyle: 'none'
+                            }}>
+                                <li style={{ margin: '10px 0' }}>
+                                    <a href="#home" style={{
+                                        textDecoration: 'none',
+                                        color: '#87ceeb', // Sky blue
+                                        fontWeight: '500'
+                                    }}>Home</a>
+                                </li>
+                                <li style={{ margin: '10px 0' }}>
+                                    <a href="#about" style={{
+                                        textDecoration: 'none',
+                                        color: '#87ceeb',
+                                        fontWeight: '500'
+                                    }}>About</a>
+                                </li>
+                                <li style={{ margin: '10px 0' }}>
+                                    <a href="#services" style={{
+                                        textDecoration: 'none',
+                                        color: '#87ceeb',
+                                        fontWeight: '500'
+                                    }}>Services</a>
+                                </li>
+                                <li style={{ margin: '10px 0' }}>
+                                    <a href="#contact" style={{
+                                        textDecoration: 'none',
+                                        color: '#87ceeb',
+                                        fontWeight: '500'
+                                    }}>Contact</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    )}
+                </div>
+            );
+        }
+
+        // Render the App
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
