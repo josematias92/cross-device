@@ -342,6 +342,10 @@ app.get('/usersLocation', (req, res) => {
   res.sendFile(path.join(__dirname, "public" ,'usersLocation.html'));
 });
 
+app.get("/news", () => {
+  res.sendFile(path.join(__dirname, "public", "SPA.html"))
+})
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
