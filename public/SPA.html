@@ -3,22 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>React SPA</title>
-    <!-- Mobile-first viewport -->
+    <title>Fresh News</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 </head>
 <body>
-    <!-- Root element for React -->
     <div id="root"></div>
 
-    <!-- React and ReactDOM CDN -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-
-    <!-- Babel for JSX compilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Our React App -->
     <script type="text/babel">
         function App() {
             const [isNavOpen, setIsNavOpen] = React.useState(false);
@@ -26,25 +20,53 @@
             return (
                 <div style={{
                     minHeight: '100vh',
-                    position: 'relative',
-                    padding: '20px',
                     backgroundColor: '#ffffff',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#333'
+                    fontFamily: "'Helvetica Neue', Arial, sans-serif",
+                    color: '#2d2d2d',
+                    padding: '20px',
+                    lineHeight: '1.6'
                 }}>
-                    {/* Main Content */}
-                    <main style={{
-                        paddingBottom: '60px'
+                    {/* Header */}
+                    <header style={{
+                        marginBottom: '40px',
+                        borderBottom: '1px solid #f0f7fa'
                     }}>
-                        <section style={{
-                            backgroundColor: '#f0f7fa', // Soft, eye-friendly color
-                            padding: '20px',
-                            borderRadius: '8px',
-                            margin: '20px 0'
+                        <h1 style={{
+                            fontSize: '28px',
+                            fontWeight: '300',
+                            color: '#87ceeb', // Sky blue
+                            marginBottom: '10px'
+                        }}>Fresh News</h1>
+                    </header>
+
+                    {/* Article Section */}
+                    <main style={{
+                        maxWidth: '700px',
+                        margin: '0 auto'
+                    }}>
+                        <article style={{
+                            backgroundColor: '#f0f7fa', // Soft, eye-friendly
+                            padding: '25px',
+                            borderRadius: '10px',
+                            marginBottom: '30px'
                         }}>
-                            <h1>Welcome</h1>
-                            <p>This is a clean, mobile-first SPA built with React</p>
-                        </section>
+                            <h2 style={{
+                                fontSize: '24px',
+                                fontWeight: '400',
+                                marginBottom: '15px'
+                            }}>A Minimalist Approach to News</h2>
+                            <p style={{
+                                fontSize: '16px',
+                                marginBottom: '15px'
+                            }}>
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                            </p>
+                            <p style={{
+                                fontSize: '16px'
+                            }}>
+                                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                            </p>
+                        </article>
                     </main>
 
                     {/* Navigation Button */}
@@ -54,15 +76,15 @@
                             position: 'fixed',
                             bottom: '20px',
                             right: '20px',
-                            width: '50px',
-                            height: '50px',
+                            width: '45px',
+                            height: '45px',
                             backgroundColor: '#87ceeb', // Sky blue
                             border: 'none',
                             borderRadius: '50%',
-                            fontSize: '24px',
+                            fontSize: '20px',
                             color: 'white',
                             cursor: 'pointer',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                             transition: 'transform 0.2s'
                         }}
                     >
@@ -73,43 +95,47 @@
                     {isNavOpen && (
                         <nav style={{
                             position: 'fixed',
-                            bottom: '80px',
+                            bottom: '75px',
                             right: '20px',
                             backgroundColor: 'white',
                             borderRadius: '8px',
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                            padding: '10px'
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                            padding: '15px'
                         }}>
                             <ul style={{
                                 listStyle: 'none'
                             }}>
                                 <li style={{ margin: '10px 0' }}>
-                                    <a href="#home" style={{
+                                    <a href="#latest" style={{
                                         textDecoration: 'none',
-                                        color: '#87ceeb', // Sky blue
-                                        fontWeight: '500'
-                                    }}>Home</a>
+                                        color: '#87ceeb',
+                                        fontSize: '16px',
+                                        fontWeight: '400'
+                                    }}>Latest</a>
+                                </li>
+                                <li style={{ margin: '10px 0' }}>
+                                    <a href="#categories" style={{
+                                        textDecoration: 'none',
+                                        color: '#87ceeb',
+                                        fontSize: '16px',
+                                        fontWeight: '400'
+                                    }}>Categories</a>
+                                </li>
+                                <li style={{ margin: '10px 0' }}>
+                                    <a href="#archive" style={{
+                                        textDecoration: 'none',
+                                        color: '#87ceeb',
+                                        fontSize: '16px',
+                                        fontWeight: '400'
+                                    }}>Archive</a>
                                 </li>
                                 <li style={{ margin: '10px 0' }}>
                                     <a href="#about" style={{
                                         textDecoration: 'none',
                                         color: '#87ceeb',
-                                        fontWeight: '500'
+                                        fontSize: '16px',
+                                        fontWeight: '400'
                                     }}>About</a>
-                                </li>
-                                <li style={{ margin: '10px 0' }}>
-                                    <a href="#services" style={{
-                                        textDecoration: 'none',
-                                        color: '#87ceeb',
-                                        fontWeight: '500'
-                                    }}>Services</a>
-                                </li>
-                                <li style={{ margin: '10px 0' }}>
-                                    <a href="#contact" style={{
-                                        textDecoration: 'none',
-                                        color: '#87ceeb',
-                                        fontWeight: '500'
-                                    }}>Contact</a>
                                 </li>
                             </ul>
                         </nav>
@@ -118,7 +144,6 @@
             );
         }
 
-        // Render the App
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
