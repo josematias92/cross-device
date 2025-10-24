@@ -312,6 +312,26 @@ app.get('/shouldIContinue', async (req, res) => {
     }
 });
 
+app.post('/slack/events', (req, res) => {
+  // 1. Handle the URL Verification Challenge
+  if (req.body.type === 'url_verification') {
+    console.log("Verifying URL...");
+    res.send(req.body.challenge); // Send back the challenge string
+    return;
+  }
+
+  // 2. Handle a real event
+  if (req.body.type === 'event_callback') {
+    const event = req.body.event;
+    console.log("Received event:", event.type);
+    // Add your logic to handle the event here
+    // e.g., if (event.type === 'message.channels') { ... }
+  }
+
+  // 3. Send a 200 OK to acknowledge receipt
+  res.sendStatus(200);
+});
+
 app.get('/success', async (req, res) => {
   
   try {
